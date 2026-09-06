@@ -98,10 +98,6 @@
   .cnm-caixa .titulo{font-size:13px;font-weight:600;margin-bottom:4px}
   .cnm-caixa .onde{font-size:12.5px;color:var(--texto2);margin-bottom:9px;line-height:1.5}
 
-  /* etiqueta de numero predial dos vizinhos */
-  .numero-vizinho{background:rgba(46,68,83,.88);color:#fff;border-radius:11px;
-    padding:1px 7px;font-size:11px;font-weight:700;white-space:nowrap;
-    border:1px solid rgba(255,255,255,.6);box-shadow:0 1px 4px rgba(0,0,0,.35)}
   /* mapa e confirmacao por clique (06/09/2026) */
   #mapa{height:330px}
   .dica-mapa{background:#fff8f2;border:1.5px solid var(--laranja);border-radius:9px;
@@ -119,7 +115,7 @@
 </head>
 <body>
 
-<form name="diagnostico" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" hidden>
+<form hidden method='POST' name='diagnostico'>
   <input type="hidden" name="form-name" value="diagnostico">
   <input name="bot-field"><input name="nome"><input name="whatsapp">
   <input name="endereco"><input name="codigo_cartografico"><input name="bairro"><input name="zona">
@@ -420,39 +416,17 @@ function buscarImovel() {
       <div class="aviso"><strong>Localizamos a rua, mas não o código deste número.</strong><br>
       Isso acontece e não impede nada — nem todo imóvel de Campinas tem o código na consulta
       pública. Levantamos ele no seu processo. Pode seguir.</div>
-      ${r ? '<div id="mapa"></div><div class="dica-mapa"><strong>Clique no seu imóvel na foto.</strong> Os números em azul são imóveis vizinhos já cadastrados — use-os para se orientar. O código cartográfico sai na hora, direto da base da Prefeitura.</div><div id="fichaPonto"></div>' : ''}`;
-    if (r) desenharMapa(r.c, false, rua);
+      ${r ? '<div id="mapa"></div><div class="dica-mapa"><strong>Encontre o seu imóvel na foto de satélite e clique nele.</strong> O código cartográfico sai na hora, direto da base da Prefeitura.</div><div id="fichaPonto"></div>' : ''}`;
+    if (r) desenharMapa(r.c, false);
   }
 }
 
-
-// ---------------------------------------------------------------------------
-// Vizinhos conhecidos da rua: servem de referencia para a pessoa achar o lote.
-// Sem isso o mapa abria afastado e ela precisava reconhecer a casa no meio do
-// bairro - foi o que a Ana apontou.
-// ---------------------------------------------------------------------------
-function marcarVizinhos(rua) {
-  const chave = chaveRua(rua);
-  const pontos = terrenos
-    .filter(t => chaveRua(t.LOGRADOURO) === chave && t.c && t.NUMERO)
-    .filter((t, i, a) => a.findIndex(x => String(x.NUMERO) === String(t.NUMERO)) === i);
-  if (!pontos.length) return null;
-
-  pontos.forEach(t => {
-    L.marker([t.c[1], t.c[0]], {
-      icon: L.divIcon({ className: '', html: '<div class="numero-vizinho">' + t.NUMERO + '</div>',
-                        iconSize: null })
-    }).addTo(mapa);
-  });
-  return L.latLngBounds(pontos.map(t => [t.c[1], t.c[0]]));
-}
-
-function desenharMapa(coord, precisa, rua) {
+function desenharMapa(coord, precisa) {
   const el = document.getElementById('mapa');
   if (!el) return;
   if (mapa) { mapa.remove(); mapa = null; }
   mapa = L.map(el, { zoomControl: true, scrollWheelZoom: false })
-          .setView([coord[1], coord[0]], precisa ? 19 : 18);
+          .setView([coord[1], coord[0]], precisa ? 18 : 16);
 
   // Esri World Imagery: recente e sem chave. A ortofoto da Prefeitura e de 2014 -
   // util para comparar, mas mostra terreno vazio onde hoje ha construcao.
@@ -471,12 +445,6 @@ function desenharMapa(coord, precisa, rua) {
   if (precisa) L.circleMarker([coord[1], coord[0]], {
     radius: 9, weight: 3, color: '#fff', fillColor: '#FF6900', fillOpacity: 1
   }).addTo(mapa);
-
-  // sem o numero exato: enquadra a rua inteira e etiqueta os vizinhos conhecidos
-  if (!precisa && rua) {
-    const limites = marcarVizinhos(rua);
-    if (limites) mapa.fitBounds(limites, { padding: [40, 40], maxZoom: 18 });
-  }
 }
 
 const MINUSCULAS = new Set(['DE','DA','DO','DAS','DOS','E']);
