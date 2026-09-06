@@ -1,0 +1,465 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador Grátis — Projeto Imediato</title>
+<meta name="description" content="Descubra em 2 minutos a situação do seu imóvel em Campinas: foto aérea, zoneamento e código cartográfico da Prefeitura.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --laranja:#FF6900; --petroleo:#2E4453; --creme:#FBF8F4;
+    --texto:#404040; --texto2:#6B6B6B; --borda:#e6e0d8; --verde:#25D366;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Noto Sans",system-ui,sans-serif;color:var(--texto);background:var(--creme)}
+
+  .topo{background:var(--petroleo);color:#fff;padding:16px 22px;text-align:center}
+  .topo .marca{font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+  .topo h1{margin:6px 0 0;font-size:21px;font-weight:600}
+
+  .palco{max-width:660px;margin:26px auto 60px;padding:0 18px}
+  .cartao{background:#fff;border-radius:14px;padding:30px 28px 26px;box-shadow:0 4px 22px rgba(0,0,0,.07)}
+
+  .bolinhas{display:flex;gap:9px;justify-content:center;margin-bottom:26px}
+  .bolinha{width:11px;height:11px;border-radius:50%;background:#ddd6cb;transition:background .25s}
+  .bolinha.feita{background:var(--laranja)}
+  .bolinha.atual{background:var(--laranja);box-shadow:0 0 0 4px rgba(255,105,0,.18)}
+
+  h2{font-size:23px;margin:0 0 6px;color:var(--petroleo);font-weight:700}
+  .ajuda{color:var(--texto2);font-size:14.5px;margin:0 0 22px;line-height:1.5}
+
+  label.campo{display:block;font-size:13px;font-weight:600;color:var(--texto);margin:16px 0 7px}
+  input[type=text],input[type=number],textarea,select{
+    width:100%;padding:13px 14px;border:1.5px solid var(--borda);border-radius:9px;
+    font-size:15px;font-family:inherit;color:var(--texto);background:#fff}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--laranja)}
+  textarea{min-height:88px;resize:vertical}
+
+  .opcoes{display:grid;gap:10px;margin-top:6px}
+  .opcoes.duas{grid-template-columns:1fr 1fr}
+  .opcao{display:flex;align-items:center;gap:11px;border:1.5px solid var(--borda);border-radius:10px;
+    padding:14px 15px;cursor:pointer;font-size:14.5px;background:#fff;transition:border-color .15s,background .15s}
+  .opcao:hover{border-color:#c9bfae}
+  .opcao input{accent-color:var(--laranja);width:17px;height:17px;flex:0 0 auto;margin:0}
+  .opcao.marcada{border-color:var(--laranja);background:#fff8f2}
+
+  .sugestoes{list-style:none;margin:6px 0 0;padding:0;max-height:190px;overflow-y:auto;
+    border:1.5px solid var(--borda);border-radius:9px;display:none;background:#fff}
+  .sugestoes li{padding:11px 14px;font-size:14px;cursor:pointer;border-bottom:1px solid #f2ede6}
+  .sugestoes li:last-child{border-bottom:none}
+  .sugestoes li:hover{background:var(--creme)}
+
+  .navegacao{display:flex;justify-content:space-between;gap:12px;margin-top:26px}
+  button{font-family:inherit;font-size:15px;font-weight:600;border:none;border-radius:30px;
+    padding:14px 30px;cursor:pointer;transition:filter .15s}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .voltar{background:#eee7dc;color:var(--petroleo)}
+  .proximo{background:var(--petroleo);color:#fff}
+  .zap{background:var(--verde);color:#fff;width:100%;font-size:16px;padding:16px}
+  button:hover:not(:disabled){filter:brightness(1.08)}
+
+  #mapa{height:250px;border-radius:11px;border:1.5px solid var(--borda);margin-top:14px}
+  .achado{background:var(--creme);border-left:4px solid var(--laranja);border-radius:0 9px 9px 0;
+    padding:15px 17px;margin-top:14px;font-size:14.5px;line-height:1.65}
+  .achado .cod{font-size:24px;color:var(--laranja);font-weight:700;letter-spacing:.04em;
+    font-variant-numeric:tabular-nums;display:block;margin:2px 0 6px}
+  .aviso{background:#fdf6e8;border:1px solid #ecdcb8;border-radius:9px;padding:13px 15px;
+    font-size:13.5px;line-height:1.6;color:#6b5a2f;margin-top:14px}
+  .erro{color:#a33;font-size:13.5px;margin-top:8px;display:none}
+
+  .resumo{font-size:14.5px;line-height:1.75}
+  .resumo dt{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:#9a9a9a;margin-top:12px}
+  .resumo dd{margin:1px 0 0;font-weight:600}
+
+  .rodape{text-align:center;font-size:12.5px;color:var(--texto2);margin-top:22px;line-height:1.7}
+  .rodape a{color:var(--laranja)}
+  .carregando{text-align:center;color:var(--texto2);padding:40px 0;font-size:14.5px}
+  @media (max-width:560px){ .opcoes.duas{grid-template-columns:1fr} .cartao{padding:24px 20px} }
+</style>
+</head>
+<body>
+
+<div class="topo">
+  <div class="marca">Projeto Imediato · CREA-SP 5069992055</div>
+  <h1>Simulador grátis — situação do seu imóvel</h1>
+</div>
+
+<div class="palco">
+  <div class="cartao">
+    <div class="bolinhas" id="bolinhas"></div>
+    <div id="conteudo"><div class="carregando">Carregando a base da Prefeitura…</div></div>
+  </div>
+  <p class="rodape">
+    Consulta informativa, feita sobre dados públicos da Prefeitura de Campinas.<br>
+    Não substitui certidão nem ficha informativa oficial.
+  </p>
+</div>
+
+<script src="dados.js"></script>
+<script>
+// ---------------------------------------------------------------------------
+// Simulador em etapas. Sem servidor e sem banco: o resultado é montado como
+// mensagem e entregue no WhatsApp da Ana, já preenchido.
+// ---------------------------------------------------------------------------
+const ZAP = '5519999913300';
+
+const resposta = {
+  rua: '', numero: '', codCart: '', bairro: '', zona: '', coords: null,
+  tipo: '', situacao: '', area: '', planta: '', documentos: [],
+  tentouAntes: '', protocolo: '', nome: '', whatsapp: '', relato: ''
+};
+
+let etapa = 0;
+let ruas = [], terrenos = [];
+let mapa = null, marcador = null;
+
+const semAcento = s => (s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+// as duas bases da Prefeitura escrevem o logradouro de formas diferentes;
+// tirar o tipo ("RUA", "AVENIDA"...) dos dois lados é o que faz casar
+const TIPO_LOGRADOURO = /^(RUA|R|AVENIDA|AV|TRAVESSA|TV|PRACA|PRAÇA|PC|ALAMEDA|AL|ESTRADA|EST|RODOVIA|ROD|VIELA|LARGO|MARGINAL|VIA|PASSAGEM|COMPLEXO|ACESSO)\s+/;
+const chaveRua = s => semAcento(s).trim().replace(TIPO_LOGRADOURO, '').trim();
+
+const WMS = 'https://wms2.campinas.sp.gov.br/wmsmap/wms_zoneamento.map';
+// O servidor da Prefeitura codifica DE NOVO parâmetros que já chegam
+// codificados ("%2F" vira "%252F") e devolve erro no lugar da imagem.
+// Por isso a URL é montada à mão, com ":" e "/" literais.
+const CamadaPMC = L.TileLayer.extend({
+  initialize: function (camada, opts) { this._camada = camada; L.TileLayer.prototype.initialize.call(this, WMS, opts); },
+  getTileUrl: function (coords) {
+    const b = this._tileCoordsToBounds(coords);
+    const sw = this._map.options.crs.project(b.getSouthWest());
+    const ne = this._map.options.crs.project(b.getNorthEast());
+    return WMS + '?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=' + this._camada +
+           '&STYLES=&SRS=EPSG:3857&FORMAT=' + this.options.formato +
+           '&TRANSPARENT=' + this.options.transparente + '&WIDTH=256&HEIGHT=256&BBOX=' +
+           [sw.x, sw.y, ne.x, ne.y].join(',');
+  }
+});
+
+const etapas = [
+  {
+    titulo: 'Onde fica o imóvel?',
+    ajuda: 'Digite a rua e o número. Vamos localizar na base da Prefeitura de Campinas.',
+    render: () => `
+      <label class="campo" for="rua">Rua</label>
+      <input type="text" id="rua" placeholder="Comece a digitar o nome da rua" autocomplete="off" value="${esc(resposta.rua)}">
+      <ul class="sugestoes" id="sugestoes"></ul>
+      <label class="campo" for="numero">Número</label>
+      <input type="text" id="numero" placeholder="Ex: 194" value="${esc(resposta.numero)}">
+      <div class="erro" id="erroEndereco"></div>
+      <div id="resultadoBusca"></div>`,
+    aoEntrar: montarBuscaEndereco,
+    valida: () => {
+      const r = document.getElementById('rua').value.trim();
+      const n = document.getElementById('numero').value.trim();
+      if (!r) return 'Informe a rua do imóvel.';
+      resposta.rua = r; resposta.numero = n;
+      // busca aqui também: se a pessoa digitar e clicar direto em "Próximo",
+      // o evento de saída do campo pode não disparar e o código se perderia
+      buscarImovel();
+      return null;
+    }
+  },
+  {
+    titulo: 'Que tipo de imóvel é?',
+    ajuda: 'Isso define qual legislação se aplica ao caso.',
+    render: () => escolha('tipo', [
+      'Casa', 'Sobrado', 'Apartamento', 'Comercial', 'Galpão', 'Terreno sem construção'
+    ], true),
+    valida: () => resposta.tipo ? null : 'Escolha o tipo de imóvel.'
+  },
+  {
+    titulo: 'Qual é a situação hoje?',
+    ajuda: 'Pode marcar a que mais se aproxima — ajustamos depois na conversa.',
+    render: () => escolha('situacao', [
+      'Construí sem projeto aprovado',
+      'Ampliei ou reformei sem aprovação',
+      'Construí diferente do projeto aprovado',
+      'Comprei o imóvel já irregular',
+      'Preciso do Habite-se',
+      'Preciso averbar a construção na matrícula',
+      'Recebi multa ou notificação da Prefeitura',
+      'Ainda não sei dizer'
+    ]),
+    valida: () => resposta.situacao ? null : 'Escolha a situação do imóvel.'
+  },
+  {
+    titulo: 'Área construída e documentação',
+    ajuda: 'Informe a área aproximada e se possui planta do imóvel.',
+    render: () => `
+      <label class="campo" for="area">Área construída aproximada</label>
+      <input type="number" id="area" placeholder="Ex: 150" value="${esc(resposta.area)}" min="1">
+      <div style="font-size:13px;color:var(--texto2);margin-top:5px">em metros quadrados — pode ser estimativa</div>
+      <label class="campo">Possui planta do imóvel? (física ou digital)</label>
+      ${escolha('planta', ['Sim', 'Não', 'Não sei'], true)}
+      <label class="campo">Documentos disponíveis (opcional)</label>
+      ${multiEscolha('documentos', ['IPTU', 'Matrícula', 'Alvará antigo', 'Habite-se / CCO', 'Projeto antigo'])}`,
+    valida: () => {
+      resposta.area = document.getElementById('area').value.trim();
+      return resposta.planta ? null : 'Informe se possui planta do imóvel.';
+    }
+  },
+  {
+    titulo: 'Já tentou regularizar antes?',
+    ajuda: 'Se já houve um processo, o caminho muda — e costuma ser mais rápido.',
+    render: () => `
+      ${escolha('tentouAntes', ['Sim, já protocolei', 'Sim, mas foi indeferido', 'Não, nunca tentei'], true)}
+      <label class="campo" for="protocolo">Número do protocolo, se souber (opcional)</label>
+      <input type="text" id="protocolo" placeholder="Ex: 2024/12345" value="${esc(resposta.protocolo)}">`,
+    valida: () => {
+      resposta.protocolo = document.getElementById('protocolo').value.trim();
+      return resposta.tentouAntes ? null : 'Escolha uma das opções.';
+    }
+  },
+  {
+    titulo: 'Para onde enviamos o diagnóstico?',
+    ajuda: 'Retornamos em até 24 horas úteis, pelo WhatsApp.',
+    render: () => `
+      <label class="campo" for="nome">Seu nome</label>
+      <input type="text" id="nome" placeholder="Nome completo" value="${esc(resposta.nome)}">
+      <label class="campo" for="whatsapp">Seu WhatsApp</label>
+      <input type="text" id="whatsapp" placeholder="(19) 90000-0000" value="${esc(resposta.whatsapp)}">
+      <label class="campo" for="relato">Quer contar mais alguma coisa? (opcional)</label>
+      <textarea id="relato" placeholder="Escreva aqui o que achar importante">${esc(resposta.relato)}</textarea>
+      <div class="erro" id="erroContato"></div>`,
+    valida: () => {
+      resposta.nome = document.getElementById('nome').value.trim();
+      resposta.whatsapp = document.getElementById('whatsapp').value.trim();
+      resposta.relato = document.getElementById('relato').value.trim();
+      if (!resposta.nome) return 'Informe seu nome.';
+      if (resposta.whatsapp.replace(/\D/g, '').length < 10) return 'Informe um WhatsApp válido, com DDD.';
+      return null;
+    }
+  },
+  { titulo: 'Tudo pronto', ajuda: 'Confira o resumo e envie para a engenheira responsável.', final: true }
+];
+
+// ---------------------------------------------------------------------------
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+}
+
+function escolha(campo, itens, duas) {
+  return `<div class="opcoes ${duas ? 'duas' : ''}">` + itens.map(i => `
+    <label class="opcao ${resposta[campo] === i ? 'marcada' : ''}">
+      <input type="radio" name="${campo}" value="${esc(i)}" ${resposta[campo] === i ? 'checked' : ''}>
+      <span>${esc(i)}</span>
+    </label>`).join('') + '</div>';
+}
+
+function multiEscolha(campo, itens) {
+  return `<div class="opcoes duas">` + itens.map(i => `
+    <label class="opcao ${resposta[campo].includes(i) ? 'marcada' : ''}">
+      <input type="checkbox" name="${campo}" value="${esc(i)}" ${resposta[campo].includes(i) ? 'checked' : ''}>
+      <span>${esc(i)}</span>
+    </label>`).join('') + '</div>';
+}
+
+function ligarOpcoes() {
+  document.querySelectorAll('.opcao input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const campo = inp.name;
+      if (inp.type === 'radio') {
+        resposta[campo] = inp.value;
+        document.querySelectorAll(`input[name="${campo}"]`).forEach(o =>
+          o.closest('.opcao').classList.toggle('marcada', o.checked));
+      } else {
+        const lista = resposta[campo];
+        const i = lista.indexOf(inp.value);
+        if (inp.checked && i < 0) lista.push(inp.value);
+        if (!inp.checked && i >= 0) lista.splice(i, 1);
+        inp.closest('.opcao').classList.toggle('marcada', inp.checked);
+      }
+    });
+  });
+}
+
+function montarBuscaEndereco() {
+  const campoRua = document.getElementById('rua');
+  const lista = document.getElementById('sugestoes');
+
+  campoRua.addEventListener('input', () => {
+    const q = semAcento(campoRua.value.trim());
+    lista.innerHTML = '';
+    if (q.length < 3) { lista.style.display = 'none'; return; }
+    const achados = ruas.filter(r => r.b.includes(q)).slice(0, 10);
+    if (!achados.length) { lista.style.display = 'none'; return; }
+    achados.forEach(r => {
+      const li = document.createElement('li');
+      li.textContent = r.n;
+      li.onclick = () => { campoRua.value = r.n; lista.style.display = 'none'; buscarImovel(); };
+      lista.appendChild(li);
+    });
+    lista.style.display = 'block';
+  });
+
+  document.getElementById('numero').addEventListener('change', buscarImovel);
+  document.addEventListener('click', e => { if (!e.target.closest('#rua,#sugestoes')) lista.style.display = 'none'; });
+  if (resposta.codCart) buscarImovel();
+}
+
+function buscarImovel() {
+  const rua = document.getElementById('rua').value.trim();
+  const num = document.getElementById('numero').value.trim();
+  const alvo = document.getElementById('resultadoBusca');
+  if (!rua || !num) return;
+
+  const chave = chaveRua(rua);
+  const achado = terrenos.find(t => chaveRua(t.LOGRADOURO) === chave && String(t.NUMERO) === num);
+
+  if (achado) {
+    resposta.codCart = achado.COD_CART || '';
+    resposta.bairro = achado.BAIRRO || '';
+    resposta.zona = achado.ZONE_NEW || '';
+    resposta.coords = achado.c;
+    alvo.innerHTML = `
+      <div class="achado">
+        <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:#9a9a9a">Código cartográfico</div>
+        <span class="cod">${esc(resposta.codCart)}</span>
+        ${resposta.bairro ? `<div><strong>Bairro:</strong> ${esc(tituloTexto(resposta.bairro))}</div>` : ''}
+        ${resposta.zona ? `<div><strong>Zona:</strong> ${esc(resposta.zona)}</div>` : ''}
+      </div>
+      <div id="mapa"></div>`;
+    desenharMapa(achado.c, true);
+  } else {
+    const r = ruas.find(x => chaveRua(x.n) === chave) || ruas.find(x => x.b.includes(semAcento(rua)));
+    resposta.codCart = ''; resposta.zona = ''; resposta.bairro = '';
+    resposta.coords = r ? r.c : null;
+    alvo.innerHTML = `
+      <div class="aviso"><strong>Localizamos a rua, mas não o código deste número.</strong><br>
+      Isso acontece e não impede nada — nem todo imóvel de Campinas tem o código na consulta
+      pública. Levantamos ele no seu processo. Pode seguir.</div>
+      ${r ? '<div id="mapa"></div>' : ''}`;
+    if (r) desenharMapa(r.c, false);
+  }
+}
+
+function desenharMapa(coord, precisa) {
+  const el = document.getElementById('mapa');
+  if (!el) return;
+  if (mapa) { mapa.remove(); mapa = null; }
+  mapa = L.map(el, { zoomControl: true, scrollWheelZoom: false })
+          .setView([coord[1], coord[0]], precisa ? 18 : 16);
+
+  const orto = new CamadaPMC('2014_Ortofoto', { formato: 'image/jpeg', transparente: 'false', maxZoom: 20 });
+  const ruasBase = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20, attribution: '© OpenStreetMap' });
+  const lotes = new CamadaPMC('propriedades', { formato: 'image/png', transparente: 'true', maxZoom: 20 });
+
+  orto.addTo(mapa); lotes.addTo(mapa);
+  L.control.layers({ 'Foto aérea': orto, 'Mapa de ruas': ruasBase }, { 'Limites de lote': lotes }).addTo(mapa);
+
+  if (precisa) L.circleMarker([coord[1], coord[0]], {
+    radius: 9, weight: 3, color: '#fff', fillColor: '#FF6900', fillOpacity: 1
+  }).addTo(mapa);
+}
+
+const MINUSCULAS = new Set(['DE','DA','DO','DAS','DOS','E']);
+function tituloTexto(s) {
+  return String(s || '').toLowerCase().split(/\s+/).map((p, i) =>
+    (i > 0 && MINUSCULAS.has(p.toUpperCase())) ? p : p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+}
+
+function montarMensagem() {
+  const L = [];
+  L.push('*Simulação — Projeto Imediato*');
+  L.push('');
+  L.push('*Imóvel:* ' + resposta.rua + (resposta.numero ? ', ' + resposta.numero : ''));
+  if (resposta.bairro) L.push('*Bairro:* ' + tituloTexto(resposta.bairro));
+  if (resposta.codCart) L.push('*Código cartográfico:* ' + resposta.codCart);
+  if (resposta.zona) L.push('*Zona:* ' + resposta.zona);
+  L.push('*Tipo:* ' + resposta.tipo);
+  L.push('*Situação:* ' + resposta.situacao);
+  if (resposta.area) L.push('*Área construída:* ' + resposta.area + ' m²');
+  L.push('*Possui planta:* ' + resposta.planta);
+  if (resposta.documentos.length) L.push('*Documentos:* ' + resposta.documentos.join(', '));
+  L.push('*Já tentou regularizar:* ' + resposta.tentouAntes);
+  if (resposta.protocolo) L.push('*Protocolo:* ' + resposta.protocolo);
+  L.push('');
+  L.push('*Nome:* ' + resposta.nome);
+  L.push('*WhatsApp:* ' + resposta.whatsapp);
+  if (resposta.relato) { L.push(''); L.push('*Relato:* ' + resposta.relato); }
+  return L.join('\n');
+}
+
+function telaFinal() {
+  const d = [];
+  const add = (r, v) => { if (v) d.push(`<dt>${r}</dt><dd>${esc(v)}</dd>`); };
+  add('Imóvel', resposta.rua + (resposta.numero ? ', ' + resposta.numero : ''));
+  add('Bairro', tituloTexto(resposta.bairro));
+  add('Código cartográfico', resposta.codCart || 'a levantar no processo');
+  add('Zona', resposta.zona);
+  add('Tipo', resposta.tipo);
+  add('Situação', resposta.situacao);
+  add('Área construída', resposta.area ? resposta.area + ' m²' : '');
+  add('Possui planta', resposta.planta);
+  add('Documentos', resposta.documentos.join(', '));
+  add('Já tentou regularizar', resposta.tentouAntes);
+  add('Protocolo', resposta.protocolo);
+
+  const url = 'https://api.whatsapp.com/send?phone=' + ZAP + '&text=' + encodeURIComponent(montarMensagem());
+  return `
+    <dl class="resumo">${d.join('')}</dl>
+    <div style="margin-top:24px"></div>
+    <a href="${url}" target="_blank" rel="noopener" style="text-decoration:none">
+      <button class="zap">Enviar para a engenheira no WhatsApp</button>
+    </a>
+    <div class="aviso" style="margin-top:16px">
+      Ao enviar, o resumo acima já vai preenchido na conversa. A resposta com o diagnóstico
+      e a estimativa de custo chega em até 24 horas úteis.
+    </div>`;
+}
+
+function desenhar() {
+  const e = etapas[etapa];
+  document.getElementById('bolinhas').innerHTML = etapas.map((_, i) =>
+    `<div class="bolinha ${i < etapa ? 'feita' : ''} ${i === etapa ? 'atual' : ''}"></div>`).join('');
+
+  const corpo = e.final ? telaFinal() : e.render();
+  const nav = e.final ? '' : `
+    <div class="navegacao">
+      <button class="voltar" id="btVoltar" ${etapa === 0 ? 'style="visibility:hidden"' : ''}>← Voltar</button>
+      <button class="proximo" id="btProximo">${etapa === etapas.length - 2 ? 'Ver resultado' : 'Próximo'} →</button>
+    </div>`;
+
+  document.getElementById('conteudo').innerHTML =
+    `<h2>${esc(e.titulo)}</h2><p class="ajuda">${esc(e.ajuda)}</p>${corpo}${nav}`;
+
+  ligarOpcoes();
+  if (e.aoEntrar) e.aoEntrar();
+
+  const bt = document.getElementById('btProximo');
+  if (bt) bt.onclick = () => {
+    const erro = e.valida ? e.valida() : null;
+    if (erro) { mostrarErro(erro); return; }
+    etapa++; desenhar(); window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  const bv = document.getElementById('btVoltar');
+  if (bv) bv.onclick = () => { etapa--; desenhar(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+}
+
+function mostrarErro(msg) {
+  let alvo = document.getElementById('erroEndereco') || document.getElementById('erroContato');
+  if (!alvo) {
+    alvo = document.createElement('div');
+    alvo.className = 'erro';
+    document.querySelector('.navegacao').before(alvo);
+  }
+  alvo.textContent = msg;
+  alvo.style.display = 'block';
+}
+
+// ---------------------------------------------------------------------------
+if (typeof RUAS === 'undefined') {
+  document.getElementById('conteudo').innerHTML =
+    '<div class="aviso">Não foi possível carregar a base de endereços. Recarregue a página.</div>';
+} else {
+  ruas = RUAS;
+  terrenos = ALVARAS.filter(a => a.COD_CART);
+  desenhar();
+}
+</script>
+</body>
+</html>
