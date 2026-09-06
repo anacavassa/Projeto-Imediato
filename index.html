@@ -463,7 +463,7 @@ function buscarImovel() {
         ${resposta.zona ? `<div><strong>Zona:</strong> ${esc(resposta.zona)}</div>` : ''}
       </div>
       <div id="mapa"></div>
-      <div class="nota-mapa"><span>Ao marcar o lote, o mapa troca para a <strong>foto oficial da Prefeitura</strong>, que &eacute; ortorretificada &mdash; nela o desenho &eacute; fiel. Na imagem de sat&eacute;lite, constru&ccedil;&otilde;es altas aparecem inclinadas e o lote parece cortar o pr&eacute;dio.</span><button type="button" id="alinhar-base" onclick="alternarBase()">Alinhar com a base oficial</button></div>
+      <div class="nota-mapa"><span>Mapa na <strong>foto oficial da Prefeitura</strong>, que &eacute; ortorretificada: &eacute; nela que as linhas de lote batem com a imagem. No sat&eacute;lite, constru&ccedil;&atilde;o alta aparece inclinada e o clique acaba caindo no lote vizinho.</span><button type="button" id="alinhar-base" onclick="alternarBase()">Ver satélite atual</button></div>
       <div class="dica-mapa"><strong>Confirme clicando no seu imóvel</strong> na foto de satélite.
         Assim buscamos o código e o desenho do lote no ponto exato.</div>
       <div id="fichaPonto"></div>
@@ -485,7 +485,7 @@ function buscarImovel() {
       <div class="aviso" id="avisoSemCodigo"><strong>Localizamos a rua, mas não o código deste número.</strong><br>
       Isso acontece e não impede nada — nem todo imóvel de Campinas tem o código na consulta
       pública. Levantamos ele no seu processo. Pode seguir.</div>
-      ${r ? '<div id="mapa"></div><div class="nota-mapa"><span>Ao marcar o lote, o mapa troca para a <strong>foto oficial da Prefeitura</strong>, que &eacute; ortorretificada &mdash; nela o desenho &eacute; fiel. Na imagem de sat&eacute;lite, constru&ccedil;&otilde;es altas aparecem inclinadas e o lote parece cortar o pr&eacute;dio.</span><button type="button" id="alinhar-base" onclick="alternarBase()">Alinhar com a base oficial</button></div><div class="dica-mapa"><strong>Clique no seu imóvel na foto.</strong> Os números em azul são imóveis vizinhos já cadastrados — use-os para se orientar. O código cartográfico sai na hora, direto da base da Prefeitura.</div><div id="fichaPonto"></div>' : ''}`;
+      ${r ? '<div id="mapa"></div><div class="nota-mapa"><span>Mapa na <strong>foto oficial da Prefeitura</strong>, que &eacute; ortorretificada: &eacute; nela que as linhas de lote batem com a imagem. No sat&eacute;lite, constru&ccedil;&atilde;o alta aparece inclinada e o clique acaba caindo no lote vizinho.</span><button type="button" id="alinhar-base" onclick="alternarBase()">Ver satélite atual</button></div><div class="dica-mapa"><strong>Clique no seu imóvel na foto.</strong> Os números em azul são imóveis vizinhos já cadastrados — use-os para se orientar. O código cartográfico sai na hora, direto da base da Prefeitura.</div><div id="fichaPonto"></div>' : ''}`;
     if (r) desenharMapa(r.c, false, rua);
   }
 }
@@ -530,8 +530,10 @@ function desenharMapa(coord, precisa, rua) {
   const ruasBase = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20, attribution: '© OpenStreetMap' });
   camadaLotes = new CamadaPMC('propriedades', { formato: 'image/png', transparente: 'true', maxZoom: 20 });
 
-  camadaSatelite.addTo(mapa); camadaLotes.addTo(mapa);
-  baseAtual = 'satelite';
+  // abre na ortofoto: e a base em que as linhas de lote batem com a imagem.
+  // no satelite obliquo a construcao tomba e o clique cai no lote vizinho.
+  camadaOrto.addTo(mapa); camadaLotes.addTo(mapa);
+  baseAtual = 'orto';
   L.control.layers({ 'Satélite (atual)': camadaSatelite, 'Foto aérea 2014 (Prefeitura)': camadaOrto, 'Mapa de ruas': ruasBase },
                    { 'Limites de lote': camadaLotes }).addTo(mapa);
   mapa.on('click', e => consultarPonto(e.latlng.lng, e.latlng.lat));
@@ -859,7 +861,7 @@ function montarCNM() {
 // Ana pagou o levantamento.
 // ---------------------------------------------------------------------------
 const LIMITE_RAIO = 250;        // metros do endereco informado
-const LIMITE_CONSULTAS = 12;    // por janela
+const LIMITE_CONSULTAS = 25;    // por janela; 12 era pouco para quem confere varios lotes
 const JANELA_MIN = 10;          // minutos
 let pontoReferencia = null;     // definido quando o endereco e localizado
 
@@ -891,7 +893,10 @@ function minutosDeEspera() {
 
 function avisaLimite(texto) {
   const alvo = document.getElementById('fichaPonto');
-  if (alvo) alvo.innerHTML = '<div class="aviso-limite">' + texto + '</div>';
+  if (!alvo) return;
+  alvo.innerHTML = '<div class="aviso-limite">' + texto + '</div>';
+  // sem isso a recusa podia ficar fora da tela e parecer que o clique nao funciona
+  alvo.scrollIntoView({ block: 'center', behavior: 'smooth' });
 }
 
 // ---------------------------------------------------------------------------
@@ -1143,12 +1148,12 @@ function baseParaMedicao() {
 function alternarBase() {
   if (!mapa || !camadaSatelite || !camadaOrto) return;
   const bt = document.getElementById('alinhar-base');
-  if (baseAtual === 'satelite') {
-    mapa.removeLayer(camadaSatelite); camadaOrto.addTo(mapa); baseAtual = 'orto';
-    if (bt) bt.textContent = 'Voltar ao satélite atual';
-  } else {
+  if (baseAtual === 'orto') {
     mapa.removeLayer(camadaOrto); camadaSatelite.addTo(mapa); baseAtual = 'satelite';
-    if (bt) bt.textContent = 'Alinhar com a base oficial';
+    if (bt) bt.textContent = 'Voltar à foto oficial';
+  } else {
+    mapa.removeLayer(camadaSatelite); camadaOrto.addTo(mapa); baseAtual = 'orto';
+    if (bt) bt.textContent = 'Ver satélite atual';
   }
   if (camadaLotes) camadaLotes.bringToFront();
 }
