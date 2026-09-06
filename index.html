@@ -100,6 +100,19 @@
   .cnm-caixa{margin-top:14px;border:1.5px dashed var(--borda);border-radius:10px;padding:14px;background:#fff}
   .cnm-caixa .titulo{font-size:13px;font-weight:600;margin-bottom:4px}
   .cnm-caixa .onde{font-size:12.5px;color:var(--texto2);margin-bottom:9px;line-height:1.5}
+
+  /* mapa e confirmacao por clique (06/09/2026) */
+  #mapa{height:330px}
+  .dica-mapa{background:#fff8f2;border:1.5px solid var(--laranja);border-radius:9px;
+    padding:11px 14px;margin-top:12px;font-size:14px;line-height:1.55}
+  .dica-mapa strong{color:var(--laranja)}
+  .ficha{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .ficha .item{background:#fff;border:1px solid var(--borda);border-radius:9px;padding:11px 13px}
+  .ficha .rot{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#9a9a9a;font-weight:700}
+  .ficha .val{font-size:17px;font-weight:700;color:var(--petroleo);margin-top:3px;
+    font-variant-numeric:tabular-nums}
+  .ficha .val.destaque{color:var(--laranja)}
+  @media (max-width:560px){ .ficha{grid-template-columns:1fr} }
   @media (max-width:560px){ .opcoes.duas{grid-template-columns:1fr} .cartao{padding:24px 20px} }
 </style>
 </head>
@@ -156,7 +169,8 @@ const resposta = {
   rua: '', numero: '', codCart: '', bairro: '', zona: '', coords: null,
   tipo: '', situacao: '', area: '', planta: '', documentos: [],
   tentouAntes: '', protocolo: '', nome: '', whatsapp: '', relato: '',
-  consentimento: false, anexos: [], cartorio: '', matriculaNum: ''
+  consentimento: false, anexos: [], cartorio: '', matriculaNum: '',
+  macrozona: '', quarteirao: '', areaLote: ''
 };
 
 let etapa = 0;
@@ -395,8 +409,10 @@ function buscarImovel() {
         ${resposta.bairro ? `<div><strong>Bairro:</strong> ${esc(tituloTexto(resposta.bairro))}</div>` : ''}
         ${resposta.zona ? `<div><strong>Zona:</strong> ${esc(resposta.zona)}</div>` : ''}
       </div>
-      ${blocoCartorio(resposta.codCart, resposta.bairro)}
       <div id="mapa"></div>
+      <div class="dica-mapa"><strong>Confirme clicando no seu imóvel</strong> na foto de satélite.
+        Assim buscamos o código e o desenho do lote no ponto exato.</div>
+      <div id="fichaPonto">${blocoCartorio(resposta.codCart, resposta.bairro)}</div>
       <div class="cnm-caixa">
         <div class="titulo">Tem a matr&iacute;cula do im&oacute;vel? Confira o cart&oacute;rio com exatid&atilde;o</div>
         <div class="onde">Digite o <strong>CNM</strong> impresso no alto da matr&iacute;cula
@@ -414,7 +430,7 @@ function buscarImovel() {
       <div class="aviso"><strong>Localizamos a rua, mas não o código deste número.</strong><br>
       Isso acontece e não impede nada — nem todo imóvel de Campinas tem o código na consulta
       pública. Levantamos ele no seu processo. Pode seguir.</div>
-      ${r ? '<div id="mapa"></div>' : ''}`;
+      ${r ? '<div id="mapa"></div><div class="dica-mapa"><strong>Encontre o seu imóvel na foto de satélite e clique nele.</strong> O código cartográfico sai na hora, direto da base da Prefeitura.</div><div id="fichaPonto"></div>' : ''}`;
     if (r) desenharMapa(r.c, false);
   }
 }
@@ -426,12 +442,19 @@ function desenharMapa(coord, precisa) {
   mapa = L.map(el, { zoomControl: true, scrollWheelZoom: false })
           .setView([coord[1], coord[0]], precisa ? 18 : 16);
 
+  // Esri World Imagery: recente e sem chave. A ortofoto da Prefeitura e de 2014 -
+  // util para comparar, mas mostra terreno vazio onde hoje ha construcao.
+  const satelite = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { maxZoom: 20, maxNativeZoom: 19, attribution: 'Imagem: Esri, Maxar, Earthstar Geographics' });
   const orto = new CamadaPMC('2014_Ortofoto', { formato: 'image/jpeg', transparente: 'false', maxZoom: 20 });
   const ruasBase = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20, attribution: '© OpenStreetMap' });
   const lotes = new CamadaPMC('propriedades', { formato: 'image/png', transparente: 'true', maxZoom: 20 });
 
-  orto.addTo(mapa); lotes.addTo(mapa);
-  L.control.layers({ 'Foto aérea': orto, 'Mapa de ruas': ruasBase }, { 'Limites de lote': lotes }).addTo(mapa);
+  satelite.addTo(mapa); lotes.addTo(mapa);
+  L.control.layers({ 'Satélite (atual)': satelite, 'Foto aérea 2014 (Prefeitura)': orto, 'Mapa de ruas': ruasBase },
+                   { 'Limites de lote': lotes }).addTo(mapa);
+  mapa.on('click', e => consultarPonto(e.latlng.lng, e.latlng.lat));
 
   if (precisa) L.circleMarker([coord[1], coord[0]], {
     radius: 9, weight: 3, color: '#fff', fillColor: '#FF6900', fillOpacity: 1
@@ -474,6 +497,8 @@ function telaFinal() {
   add('Bairro', tituloTexto(resposta.bairro));
   add('Código cartográfico', resposta.codCart || 'a levantar no processo');
   add('Zona', resposta.zona);
+  add('Área do lote', resposta.areaLote ? resposta.areaLote + ' m²' : '');
+  add('Quarteirão', resposta.quarteirao);
   add('Cartório de registro', resposta.cartorio);
   add('Tipo', resposta.tipo);
   add('Situação', resposta.situacao);
@@ -627,6 +652,78 @@ function montarCNM() {
       <span class="ressalva">Identifica&ccedil;&atilde;o exata: vem do pr&oacute;prio n&uacute;mero da matr&iacute;cula,
       conferido pelo d&iacute;gito verificador.</span></div>`;
   });
+}
+
+
+// ---------------------------------------------------------------------------
+// Consulta pelo ponto clicado, nos servicos abertos da Prefeitura de Campinas.
+// Cobrem a cidade toda - a base de alvaras cobre so os 13.740 processos.
+// ---------------------------------------------------------------------------
+const PMC = 'https://zoneamento.campinas.sp.gov.br/novo_zoneamento/';
+let contornoLote = null;
+
+function areaPoligono(anel) {
+  const lat0 = anel.reduce((s, p) => s + p[1], 0) / anel.length;
+  const kx = 111320 * Math.cos(lat0 * Math.PI / 180), ky = 110540;
+  let s = 0;
+  for (let i = 0; i < anel.length - 1; i++)
+    s += (anel[i][0] * kx) * (anel[i + 1][1] * ky) - (anel[i + 1][0] * kx) * (anel[i][1] * ky);
+  return Math.abs(s) / 2;
+}
+
+async function consultarPonto(lon, lat) {
+  const alvo = document.getElementById('fichaPonto');
+  if (alvo) alvo.innerHTML = '<div class="enviando">Consultando a base da Prefeitura&hellip;</div>';
+  try {
+    const [c, z] = await Promise.all([
+      fetch(`${PMC}calc_cartografico.php?X=${lon.toFixed(7)}&Y=${lat.toFixed(7)}&srid=4326`).then(r => r.json()),
+      fetch(`${PMC}calc_zona.php?X=${lon.toFixed(7)}&Y=${lat.toFixed(7)}`).then(r => r.json())
+    ]);
+    if (!c || !c.cod_cartografico) { if (alvo) alvo.innerHTML = ''; return; }
+
+    resposta.codCart = c.cod_cartografico;
+    resposta.zona = z.zoneamento || resposta.zona;
+    resposta.macrozona = z.macrozona || '';
+    resposta.quarteirao = z.quarteirao_num || '';
+    resposta.coords = [lon, lat];
+
+    let areaLote = null;
+    if (c.poligono && contornoLote !== undefined) {
+      try {
+        const g = JSON.parse(c.poligono);
+        const anel = g.coordinates[0];
+        areaLote = areaPoligono(anel);
+        resposta.areaLote = Math.round(areaLote);
+        if (contornoLote) mapa.removeLayer(contornoLote);
+        contornoLote = L.polygon(anel.map(p => [p[1], p[0]]),
+          { color: '#FF6900', weight: 3, fillColor: '#FF6900', fillOpacity: .12 }).addTo(mapa);
+        mapa.fitBounds(contornoLote.getBounds(), { padding: [30, 30], maxZoom: 19 });
+      } catch (e) { /* sem poligono: segue so com o codigo */ }
+    }
+    if (alvo) alvo.innerHTML = fichaDoPonto(areaLote);
+  } catch (e) {
+    if (alvo) alvo.innerHTML = '<div class="aviso">Não foi possível consultar agora. ' +
+      'Você pode seguir — levantamos esses dados no diagnóstico.</div>';
+  }
+}
+
+function telhadoProximo(lon, lat) {
+  // a camada de telhados e fatiada em celulas de 0,01 grau; so a do ponto e baixada
+  return null; // ligado na proxima etapa
+}
+
+function fichaDoPonto(areaLote) {
+  const it = (rot, val, destaque) => val
+    ? `<div class="item"><div class="rot">${rot}</div><div class="val${destaque ? ' destaque' : ''}">${val}</div></div>` : '';
+  return `
+    <div class="ficha">
+      ${it('Código cartográfico', resposta.codCart, true)}
+      ${it('Área do lote', areaLote ? Math.round(areaLote).toLocaleString('pt-BR') + ' m²' : '')}
+      ${it('Zona', resposta.zona)}
+      ${it('Quarteirão', resposta.quarteirao)}
+      ${it('Macrozona', resposta.macrozona)}
+    </div>
+    ${blocoCartorio(resposta.codCart, resposta.bairro)}`;
 }
 
 function desenhar() {
