@@ -571,6 +571,12 @@ function tituloTexto(s) {
     (i > 0 && MINUSCULAS.has(p.toUpperCase())) ? p : p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
 }
 
+function textoLimpo(html) {
+  // decodifica entidades em vez de apagar: remover "&oacute;" comia o "o" de "Imoveis"
+  const d = document.createElement('textarea');
+  d.innerHTML = String(html || '');
+  return d.value;
+}
 function montarMensagem() {
   const L = [];
   L.push('*Simulação — Projeto Imediato*');
@@ -579,7 +585,7 @@ function montarMensagem() {
   if (resposta.bairro) L.push('*Bairro:* ' + tituloTexto(resposta.bairro));
   if (resposta.codCart) L.push('*Código cartográfico:* ' + resposta.codCart);
   if (resposta.zona) L.push('*Zona:* ' + resposta.zona);
-  if (resposta.cartorio) L.push('*Cartório:* ' + resposta.cartorio.replace(/&[a-z]+;/g, ''));
+  if (resposta.cartorio) L.push('*Cartório:* ' + textoLimpo(resposta.cartorio));
   if (resposta.matricula) L.push('*Matrícula (a confirmar):* ' + resposta.matricula);
   if (resposta.areaTelhado) L.push('*Telhado estimado:* ~' + resposta.areaTelhado + ' m² (imagem aérea, não é área construída)');
   L.push('*Tipo:* ' + resposta.tipo);
