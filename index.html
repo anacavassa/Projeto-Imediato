@@ -213,6 +213,9 @@ const ZAP = '5519999913300';
 
 const resposta = {
   rua: '', numero: '', codCart: '', bairro: '', zona: '', coords: null,
+  // coords = ponto do endereco digitado; clique = ponto que a pessoa marcou
+  // no mapa. Eram o mesmo campo, e por isso a volta perdia o clique.
+  clique: null, cliqueDe: '',
   tipo: '', situacao: '', area: '', planta: '', documentos: [],
   tentouAntes: '', protocolo: '', nome: '', whatsapp: '', relato: '',
   consentimento: false, cartorio: '', matriculaNum: '',
@@ -434,9 +437,27 @@ function montarBuscaEndereco() {
   // os campos de texto sozinhos nao trazem de volta mapa, lote nem ficha.
   if (resposta.rua && resposta.numero) {
     buscarImovel();
-    // se ela tinha confirmado clicando no mapa, refaz aquela consulta
-    if (resposta.coords) setTimeout(() => consultarPonto(resposta.coords[0], resposta.coords[1], true), 1200);
+    restauraClique();
   }
+}
+
+function enderecoAtual() {
+  const r = document.getElementById('rua');
+  const n = document.getElementById('numero');
+  return ((r ? r.value : resposta.rua) + '|' + (n ? n.value : resposta.numero)).trim().toUpperCase();
+}
+
+function restauraClique() {
+  // volta ao ponto que a pessoa marcou - nao ao ponto do endereco.
+  const p = resposta.clique;
+  if (!p) return;
+  // esperar o mapa existir em vez de chutar um tempo: se o mapa demorasse
+  // mais que o timeout fixo, a restauracao falhava sem avisar ninguem.
+  let tentativas = 0;
+  (function tenta() {
+    if (mapa && document.getElementById('mapa')) { consultarPonto(p[0], p[1], true); return; }
+    if (++tentativas < 50) setTimeout(tenta, 100);
+  })();
 }
 
 function buscarImovel() {
@@ -444,6 +465,11 @@ function buscarImovel() {
   const num = document.getElementById('numero').value.trim();
   const alvo = document.getElementById('resultadoBusca');
   if (!rua || !num) return;
+  // trocou a rua ou o numero: o clique anterior e de outro imovel e nao vale
+  if (resposta.clique && resposta.cliqueDe !== enderecoAtual()) {
+    resposta.clique = null;
+    resposta.cliqueDe = '';
+  }
 
   const chave = chaveRua(rua);
   const achado = terrenos.find(t => chaveRua(t.LOGRADOURO) === chave && String(t.NUMERO) === num);
@@ -951,6 +977,11 @@ async function consultarPonto(lon, lat, interno) {
     resposta.macrozona = z.macrozona || '';
     resposta.quarteirao = z.quarteirao_num || '';
     resposta.coords = [lon, lat];
+    if (!interno) {
+      // so o clique de verdade vira referencia de volta; a restauracao nao
+      resposta.clique = [lon, lat];
+      resposta.cliqueDe = enderecoAtual();
+    }
     const end = enderecoDoCodigo(c.cod_cartografico);
     const dig = numeroDigitado();
     const doc = end ? String(end.numero).replace(/\D/g, '') : '';
