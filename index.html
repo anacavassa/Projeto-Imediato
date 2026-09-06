@@ -217,7 +217,7 @@ const resposta = {
   tentouAntes: '', protocolo: '', nome: '', whatsapp: '', relato: '',
   consentimento: false, cartorio: '', matriculaNum: '',
   macrozona: '', quarteirao: '', areaLote: '', matricula: '',
-  areaTelhado: '', edificacoes: ''
+  areaTelhado: '', edificacoes: '', telhadoExato: true
 };
 
 let etapa = 0;
@@ -736,6 +736,13 @@ function cartorioPorCodigo(cod) {
 
 
 
+
+function numeroDigitado() {
+  // o campo e a fonte da verdade aqui: resposta.numero so e preenchido ao avancar
+  const el = document.getElementById('numero');
+  return String((el && el.value) || resposta.numero || '').replace(/\D/g, '');
+}
+
 function enderecoDoCodigo(cod) {
   const alvo = String(cod || '').replace(/\D/g, '');
   const r = terrenos.find(t => String(t.COD_CART) === alvo);
@@ -754,7 +761,7 @@ function blocoMatricula(cod) {
       sai na consulta ao cart&oacute;rio, com o n&uacute;mero do apartamento.</div>`;
   }
   const onde = enderecoDoCodigo(cod);
-  const digitado = String(resposta.numero || '').replace(/\D/g, '');
+  const digitado = numeroDigitado();
   const doCodigo = onde ? String(onde.numero).replace(/\D/g, '') : '';
   // se o lote clicado nao e o do numero digitado, avisar: e o erro que mais custa caro
   const divergente = digitado && doCodigo && Number(digitado) !== Number(doCodigo);
@@ -768,7 +775,7 @@ function blocoMatricula(cod) {
     return `<div class="cartorio duvida">
       <strong>Matr&iacute;cula</strong>
       <span class="qual">${ns[0].toLocaleString('pt-BR')} &mdash; do n&ordm; ${esc(onde.numero)}</span>
-      <strong>Este n&atilde;o &eacute; o n&uacute;mero que voc&ecirc; digitou (${esc(resposta.numero)}).</strong>
+      <strong>Este n&atilde;o &eacute; o n&uacute;mero que voc&ecirc; digitou (${esc(numeroDigitado())}).</strong>
       O ponto clicado no mapa caiu no lote vizinho. Clique de novo, sobre o im&oacute;vel certo.
       ${procedencia}</div>`;
   }
@@ -934,7 +941,7 @@ async function consultarPonto(lon, lat, interno) {
     resposta.quarteirao = z.quarteirao_num || '';
     resposta.coords = [lon, lat];
     const end = enderecoDoCodigo(c.cod_cartografico);
-    const dig = String(resposta.numero || '').replace(/\D/g, '');
+    const dig = numeroDigitado();
     const doc = end ? String(end.numero).replace(/\D/g, '') : '';
     // matricula so entra no laudo se o lote clicado for mesmo o do numero digitado
     resposta.matricula = (dig && doc && Number(dig) !== Number(doc))
@@ -964,6 +971,7 @@ async function consultarPonto(lon, lat, interno) {
         if (t && t.area >= 12) {
           resposta.areaTelhado = t.area;
           resposta.edificacoes = t.edificacoes;
+          resposta.telhadoExato = t.exato;
           if (alvo) alvo.innerHTML = fichaDoPonto(areaLote);
         }
       } catch (e) { /* sem telhado, a consulta continua valendo */ }
@@ -1006,7 +1014,8 @@ function dentroDoPoligono(p, anel) {
 async function telhadoDoLote(anel, lon, lat) {
   // busca nas celulas vizinhas tambem: o lote pode cruzar a borda de uma celula
   const vistos = new Set();
-  let soma = 0, quantas = 0;
+  const kx = 111320 * Math.cos(lat * Math.PI / 180), ky = 110540;
+  let soma = 0, quantas = 0, maisPerto = null;
   for (const dx of [-PASSO_CELULA, 0, PASSO_CELULA]) {
     for (const dy of [-PASSO_CELULA, 0, PASSO_CELULA]) {
       const lista = await celulaTelhados(lon + dx, lat + dy);
@@ -1014,11 +1023,18 @@ async function telhadoDoLote(anel, lon, lat) {
         const id = x + ',' + y;
         if (vistos.has(id)) continue;
         vistos.add(id);
-        if (dentroDoPoligono([x, y], anel)) { soma += a; quantas++; }
+        if (dentroDoPoligono([x, y], anel)) { soma += a; quantas++; continue; }
+        const d = Math.hypot((x - lon) * kx, (y - lat) * ky);
+        if (d <= 25 && (!maisPerto || d < maisPerto.d)) maisPerto = { a, d };
       }
     }
   }
-  return quantas ? { area: Math.round(soma), edificacoes: quantas } : null;
+  if (quantas) return { area: Math.round(soma), edificacoes: quantas, exato: true };
+  // nada dentro do poligono: as duas bases seguem referencias diferentes e o
+  // desenho pode escorregar alguns metros. A construcao vizinha imediata serve
+  // como aproximacao - desde que o texto diga que e aproximacao.
+  if (maisPerto) return { area: Math.round(maisPerto.a), edificacoes: 1, exato: false };
+  return null;
 }
 
 function matriculaDoCodigo(cod) {
@@ -1031,11 +1047,12 @@ function matriculaDoCodigo(cod) {
 function avisoTelhado() {
   const t = Number(resposta.areaTelhado).toLocaleString('pt-BR');
   const n = resposta.edificacoes;
+  const dentro = resposta.telhadoExato;
   return `<div class="aviso" style="margin-top:12px">
-    <strong>Telhado identificado: cerca de ${t} m²</strong>${n > 1 ? ' em ' + n + ' construções' : ''}.
+    <strong>Telhado identificado: cerca de ${t} m²</strong>${n > 1 ? ' em ' + n + ' construções' : ''}${dentro ? '' : ', na construção mais próxima do ponto'}.
     Medida sobre imagem aérea, pela projeção do telhado — <strong>inclui beiral e não corresponde
-    à área construída</strong> apurada por norma. Serve como referência inicial; o número oficial
-    vem do levantamento em campo.</div>`;
+    à área construída</strong> apurada por norma.${dentro ? '' : ' O desenho do lote e a imagem seguem referências diferentes, então esta é uma aproximação.'}
+    Serve como referência inicial; o número oficial vem do levantamento em campo.</div>`;
 }
 
 function fichaDoPonto(areaLote) {
