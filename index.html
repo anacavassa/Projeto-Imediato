@@ -466,7 +466,7 @@ function buscarImovel() {
       <div class="nota-mapa"><span>Ao marcar o lote, o mapa troca para a <strong>foto oficial da Prefeitura</strong>, que &eacute; ortorretificada &mdash; nela o desenho &eacute; fiel. Na imagem de sat&eacute;lite, constru&ccedil;&otilde;es altas aparecem inclinadas e o lote parece cortar o pr&eacute;dio.</span><button type="button" id="alinhar-base" onclick="alternarBase()">Alinhar com a base oficial</button></div>
       <div class="dica-mapa"><strong>Confirme clicando no seu imóvel</strong> na foto de satélite.
         Assim buscamos o código e o desenho do lote no ponto exato.</div>
-      <div id="fichaPonto">${blocoCartorio(resposta.codCart, resposta.bairro)}${blocoMatricula(resposta.codCart)}</div>
+      <div id="fichaPonto"></div>
       <div class="cnm-caixa">
         <div class="titulo">Tem a matr&iacute;cula do im&oacute;vel? Confira o cart&oacute;rio com exatid&atilde;o</div>
         <div class="onde">Digite o <strong>CNM</strong> impresso no alto da matr&iacute;cula
@@ -946,6 +946,8 @@ async function consultarPonto(lon, lat, interno) {
     // achar o codigo - contradiz o resultado logo abaixo dele
     const semCodigo = document.getElementById('avisoSemCodigo');
     if (semCodigo) semCodigo.remove();
+    // a instrucao de clicar ja cumpriu a funcao
+    document.querySelectorAll('.dica-mapa').forEach(e => e.remove());
     resposta.zona = z.zoneamento || resposta.zona;
     resposta.macrozona = z.macrozona || '';
     resposta.quarteirao = z.quarteirao_num || '';
@@ -973,7 +975,7 @@ async function consultarPonto(lon, lat, interno) {
         mapa.flyToBounds(contornoLote.getBounds(), { padding: [30, 30], maxZoom: 19, duration: 1.4 });
       } catch (e) { /* sem poligono: segue so com o codigo */ }
     }
-    if (alvo) alvo.innerHTML = fichaDoPonto(areaLote);
+    if (alvo) alvo.innerHTML = confirmacaoPonto(areaLote);
     // telhado depois da ficha: nao vale segurar o resultado principal por causa dele
     if (c.poligono) {
       try {
@@ -991,7 +993,7 @@ async function consultarPonto(lon, lat, interno) {
             resposta.edificacoes = t.edificacoes;
             resposta.telhadoExato = t.exato;
           }
-          if (alvo) alvo.innerHTML = fichaDoPonto(areaLote);
+          if (alvo) alvo.innerHTML = confirmacaoPonto(areaLote);
         }
       } catch (e) { /* sem telhado, a consulta continua valendo */ }
     }
@@ -1081,6 +1083,19 @@ function avisoTelhado() {
     Medida sobre imagem aérea, pela projeção do telhado — <strong>inclui beiral e não corresponde
     à área construída</strong> apurada por norma.${dentro ? '' : ' O desenho do lote e a imagem seguem referências diferentes, então esta é uma aproximação.'}
     Serve como referência inicial; o número oficial vem do levantamento em campo.</div>`;
+}
+
+
+function confirmacaoPonto(areaLote) {
+  // so o necessario para a pessoa saber que clicou no imovel certo.
+  // o levantamento completo sai na tela final, que e onde ele serve.
+  const a = areaLote ? Math.round(areaLote).toLocaleString('pt-BR') + ' m²' : '';
+  return `<div class="cartorio exato" style="margin-top:12px">
+    <strong>Imóvel localizado &#10003;</strong>
+    <span class="qual">${resposta.codCart}</span>
+    ${a ? 'Lote de <strong>' + a + '</strong>, pelo desenho oficial da Prefeitura. ' : ''}
+    Zona, cartório e matrícula saem no resultado, ao final.
+    <span class="ressalva">Não é o seu imóvel? Clique de novo, no lote certo.</span></div>`;
 }
 
 function fichaDoPonto(areaLote) {
