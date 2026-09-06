@@ -216,7 +216,8 @@ const resposta = {
   tipo: '', situacao: '', area: '', planta: '', documentos: [],
   tentouAntes: '', protocolo: '', nome: '', whatsapp: '', relato: '',
   consentimento: false, cartorio: '', matriculaNum: '',
-  macrozona: '', quarteirao: '', areaLote: '', matricula: ''
+  macrozona: '', quarteirao: '', areaLote: '', matricula: '',
+  areaTelhado: '', edificacoes: ''
 };
 
 let etapa = 0;
@@ -580,6 +581,7 @@ function montarMensagem() {
   if (resposta.zona) L.push('*Zona:* ' + resposta.zona);
   if (resposta.cartorio) L.push('*Cartório:* ' + resposta.cartorio.replace(/&[a-z]+;/g, ''));
   if (resposta.matricula) L.push('*Matrícula (a confirmar):* ' + resposta.matricula);
+  if (resposta.areaTelhado) L.push('*Telhado estimado:* ~' + resposta.areaTelhado + ' m² (imagem aérea, não é área construída)');
   L.push('*Tipo:* ' + resposta.tipo);
   L.push('*Situação:* ' + resposta.situacao);
   if (resposta.area) L.push('*Área construída:* ' + resposta.area + ' m²');
@@ -603,6 +605,7 @@ function blocoLaudo() {
     linha('Bairro', tituloTexto(resposta.bairro)),
     linha('Código cartográfico', resposta.codCart, true),
     linha('Área do lote', resposta.areaLote ? Number(resposta.areaLote).toLocaleString('pt-BR') + ' m²' : ''),
+    linha('Telhado sobre o lote', resposta.areaTelhado ? '~' + Number(resposta.areaTelhado).toLocaleString('pt-BR') + ' m² (estimado)' : ''),
     linha('Quarteirão', resposta.quarteirao),
     linha('Zoneamento', resposta.zona),
     linha('Macrozona', resposta.macrozona),
@@ -616,8 +619,8 @@ function blocoLaudo() {
       <div class="s">Dados públicos da Prefeitura de Campinas · consulta de ${new Date().toLocaleDateString('pt-BR')}</div>
     </div>
     <div class="corpo">${corpo}</div>
-    <div class="nota">Consulta informativa, sobre bases públicas. Não substitui certidão,
-      ficha informativa oficial nem levantamento em campo — que é o que define a área
+    <div class="nota">Consulta informativa, sobre bases públicas. A área de telhado é estimada por imagem aérea e inclui beiral — não é área construída.
+      Não substitui certidão, ficha informativa oficial nem levantamento em campo — que é o que define a área
       construída e as condições de regularização.</div>
   </div>`;
 }
@@ -732,6 +735,13 @@ function cartorioPorCodigo(cod) {
 }
 
 
+
+function enderecoDoCodigo(cod) {
+  const alvo = String(cod || '').replace(/\D/g, '');
+  const r = terrenos.find(t => String(t.COD_CART) === alvo);
+  return r ? { rua: r.LOGRADOURO || '', numero: String(r.NUMERO || '') } : null;
+}
+
 function blocoMatricula(cod) {
   if (typeof MATRICULAS === 'undefined') return '';
   const ns = MATRICULAS[String(cod || '').replace(/\D/g, '')];
@@ -743,12 +753,30 @@ function blocoMatricula(cod) {
       &Eacute; o padr&atilde;o de condom&iacute;nio: cada unidade tem a sua. A do seu im&oacute;vel
       sai na consulta ao cart&oacute;rio, com o n&uacute;mero do apartamento.</div>`;
   }
+  const onde = enderecoDoCodigo(cod);
+  const digitado = String(resposta.numero || '').replace(/\D/g, '');
+  const doCodigo = onde ? String(onde.numero).replace(/\D/g, '') : '';
+  // se o lote clicado nao e o do numero digitado, avisar: e o erro que mais custa caro
+  const divergente = digitado && doCodigo && Number(digitado) !== Number(doCodigo);
+  const procedencia = onde
+    ? `<span class="ressalva">Cadastrada para <strong>${esc(onde.rua)}, ${esc(onde.numero)}</strong>
+       &mdash; informada pelo requerente no protocolo. Confirme no cart&oacute;rio antes de pedir
+       certid&atilde;o.</span>`
+    : `<span class="ressalva">Informada pelo requerente no protocolo &mdash; confirme no
+       cart&oacute;rio antes de pedir certid&atilde;o.</span>`;
+  if (divergente) {
+    return `<div class="cartorio duvida">
+      <strong>Matr&iacute;cula</strong>
+      <span class="qual">${ns[0].toLocaleString('pt-BR')} &mdash; do n&ordm; ${esc(onde.numero)}</span>
+      <strong>Este n&atilde;o &eacute; o n&uacute;mero que voc&ecirc; digitou (${esc(resposta.numero)}).</strong>
+      O ponto clicado no mapa caiu no lote vizinho. Clique de novo, sobre o im&oacute;vel certo.
+      ${procedencia}</div>`;
+  }
   return `<div class="cartorio">
     <strong>Matr&iacute;cula</strong>
     <span class="qual">${ns[0].toLocaleString('pt-BR')}</span>
     Consta assim no processo da Prefeitura para este c&oacute;digo cartogr&aacute;fico.
-    <span class="ressalva">Informado pelo requerente no protocolo &mdash; confirme no cart&oacute;rio
-    antes de pedir certid&atilde;o.</span></div>`;
+    ${procedencia}</div>`;
 }
 
 function blocoCartorio(cod, bairro) {
@@ -905,7 +933,12 @@ async function consultarPonto(lon, lat, interno) {
     resposta.macrozona = z.macrozona || '';
     resposta.quarteirao = z.quarteirao_num || '';
     resposta.coords = [lon, lat];
-    resposta.matricula = matriculaDoCodigo(c.cod_cartografico);
+    const end = enderecoDoCodigo(c.cod_cartografico);
+    const dig = String(resposta.numero || '').replace(/\D/g, '');
+    const doc = end ? String(end.numero).replace(/\D/g, '') : '';
+    // matricula so entra no laudo se o lote clicado for mesmo o do numero digitado
+    resposta.matricula = (dig && doc && Number(dig) !== Number(doc))
+      ? '' : matriculaDoCodigo(c.cod_cartografico);
 
     let areaLote = null;
     if (c.poligono && contornoLote !== undefined) {
@@ -923,21 +956,86 @@ async function consultarPonto(lon, lat, interno) {
       } catch (e) { /* sem poligono: segue so com o codigo */ }
     }
     if (alvo) alvo.innerHTML = fichaDoPonto(areaLote);
+    // telhado depois da ficha: nao vale segurar o resultado principal por causa dele
+    if (c.poligono) {
+      try {
+        const anel = JSON.parse(c.poligono).coordinates[0];
+        const t = await telhadoDoLote(anel, lon, lat);
+        if (t && t.area >= 12) {
+          resposta.areaTelhado = t.area;
+          resposta.edificacoes = t.edificacoes;
+          if (alvo) alvo.innerHTML = fichaDoPonto(areaLote);
+        }
+      } catch (e) { /* sem telhado, a consulta continua valendo */ }
+    }
   } catch (e) {
     if (alvo) alvo.innerHTML = '<div class="aviso">Não foi possível consultar agora. ' +
       'Você pode seguir — levantamos esses dados no diagnóstico.</div>';
   }
 }
 
-function telhadoProximo(lon, lat) {
-  // a camada de telhados e fatiada em celulas de 0,01 grau; so a do ponto e baixada
-  return null; // ligado na proxima etapa
+// ---------------------------------------------------------------------------
+// Area de telhado, da camada aberta de edificacoes (743.054 em Campinas).
+// Fatiada em celulas de 0,01 grau: a pagina baixa so a do imovel consultado.
+// ---------------------------------------------------------------------------
+const PASSO_CELULA = 0.01;
+const celulasCarregadas = {};
+
+async function celulaTelhados(lon, lat) {
+  const chave = Math.round(lon / PASSO_CELULA) + '_' + Math.round(lat / PASSO_CELULA);
+  if (chave in celulasCarregadas) return celulasCarregadas[chave];
+  try {
+    const r = await fetch('telhados/' + chave + '.json');
+    celulasCarregadas[chave] = r.ok ? await r.json() : [];
+  } catch (e) {
+    celulasCarregadas[chave] = [];   // sem a celula, a consulta segue sem o telhado
+  }
+  return celulasCarregadas[chave];
+}
+
+function dentroDoPoligono(p, anel) {
+  let dentro = false;
+  for (let i = 0, j = anel.length - 1; i < anel.length; j = i++) {
+    const xi = anel[i][0], yi = anel[i][1], xj = anel[j][0], yj = anel[j][1];
+    if (((yi > p[1]) !== (yj > p[1])) &&
+        (p[0] < (xj - xi) * (p[1] - yi) / (yj - yi) + xi)) dentro = !dentro;
+  }
+  return dentro;
+}
+
+async function telhadoDoLote(anel, lon, lat) {
+  // busca nas celulas vizinhas tambem: o lote pode cruzar a borda de uma celula
+  const vistos = new Set();
+  let soma = 0, quantas = 0;
+  for (const dx of [-PASSO_CELULA, 0, PASSO_CELULA]) {
+    for (const dy of [-PASSO_CELULA, 0, PASSO_CELULA]) {
+      const lista = await celulaTelhados(lon + dx, lat + dy);
+      for (const [x, y, a] of lista) {
+        const id = x + ',' + y;
+        if (vistos.has(id)) continue;
+        vistos.add(id);
+        if (dentroDoPoligono([x, y], anel)) { soma += a; quantas++; }
+      }
+    }
+  }
+  return quantas ? { area: Math.round(soma), edificacoes: quantas } : null;
 }
 
 function matriculaDoCodigo(cod) {
   if (typeof MATRICULAS === 'undefined') return '';
   const ns = MATRICULAS[String(cod || '').replace(/\D/g, '')];
   return (ns && ns.length === 1) ? String(ns[0]) : '';
+}
+
+
+function avisoTelhado() {
+  const t = Number(resposta.areaTelhado).toLocaleString('pt-BR');
+  const n = resposta.edificacoes;
+  return `<div class="aviso" style="margin-top:12px">
+    <strong>Telhado identificado: cerca de ${t} m²</strong>${n > 1 ? ' em ' + n + ' construções' : ''}.
+    Medida sobre imagem aérea, pela projeção do telhado — <strong>inclui beiral e não corresponde
+    à área construída</strong> apurada por norma. Serve como referência inicial; o número oficial
+    vem do levantamento em campo.</div>`;
 }
 
 function fichaDoPonto(areaLote) {
@@ -947,10 +1045,12 @@ function fichaDoPonto(areaLote) {
     <div class="ficha">
       ${it('Código cartográfico', resposta.codCart, true)}
       ${it('Área do lote', areaLote ? Math.round(areaLote).toLocaleString('pt-BR') + ' m²' : '')}
+      ${it('Telhado (estimado)', resposta.areaTelhado ? '~' + Number(resposta.areaTelhado).toLocaleString('pt-BR') + ' m²' : '')}
       ${it('Zona', resposta.zona)}
       ${it('Quarteirão', resposta.quarteirao)}
       ${it('Macrozona', resposta.macrozona)}
     </div>
+    ${resposta.areaTelhado ? avisoTelhado() : ''}
     ${blocoCartorio(resposta.codCart, resposta.bairro)}
     ${blocoMatricula(resposta.codCart)}`;
 }
