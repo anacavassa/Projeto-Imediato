@@ -662,10 +662,7 @@ function telaFinal() {
       <button class="zap">Enviar para a engenheira no WhatsApp</button>
     </a>
     <div id="avisoEnvio" class="enviando">Guardando seus dados&hellip;</div>
-    <div class="aviso" style="margin-top:16px">
-      Ao clicar no botão, o resumo acima já vai preenchido na conversa do WhatsApp. A resposta
-      com o diagnóstico e a estimativa de custo chega em até 24 horas úteis.
-    </div>`;
+    `;
 }
 
 
@@ -961,6 +958,11 @@ async function consultarPonto(lon, lat, interno) {
     const dig = numeroDigitado();
     const doc = end ? String(end.numero).replace(/\D/g, '') : '';
     // matricula so entra no laudo se o lote clicado for mesmo o do numero digitado
+    // o cartorio era gravado dentro de blocoCartorio, que saiu da etapa 1.
+    // sem isso ele nao chegava ao laudo final.
+    const rc = cartorioPorCodigo(c.cod_cartografico);
+    resposta.cartorio = (rc && rc.ri && rc.confianca !== 'baixa' && ENDERECO_RI[rc.ri])
+      ? ENDERECO_RI[rc.ri].nome : '';
     resposta.matricula = (dig && doc && Number(dig) !== Number(doc))
       ? '' : matriculaDoCodigo(c.cod_cartografico);
 
