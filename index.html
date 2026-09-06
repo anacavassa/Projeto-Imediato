@@ -376,7 +376,14 @@ function montarBuscaEndereco() {
 
   document.getElementById('numero').addEventListener('change', buscarImovel);
   document.addEventListener('click', e => { if (!e.target.closest('#rua,#sugestoes')) lista.style.display = 'none'; });
-  if (resposta.codCart) buscarImovel();
+
+  // voltando para esta etapa: reconstruir o que a pessoa ja tinha na tela.
+  // os campos de texto sozinhos nao trazem de volta mapa, lote nem ficha.
+  if (resposta.rua && resposta.numero) {
+    buscarImovel();
+    // se ela tinha confirmado clicando no mapa, refaz aquela consulta
+    if (resposta.coords) setTimeout(() => consultarPonto(resposta.coords[0], resposta.coords[1]), 1200);
+  }
 }
 
 function buscarImovel() {
@@ -493,7 +500,8 @@ function desenharMapa(coord, precisa, rua) {
     }
   };
   setTimeout(() => {
-    aproxima(true);
+    aproxima(jaVoou ? false : true);   // o voo e para a primeira vez; ao voltar, direto
+    jaVoou = true;
     // se a animacao nao rodar (movimento reduzido, aba em segundo plano), garante o destino
     setTimeout(() => { if (mapa && mapa.getZoom() < 14) aproxima(false); }, 3200);
   }, 900);
@@ -720,6 +728,7 @@ function montarCNM() {
 const PMC = 'https://zoneamento.campinas.sp.gov.br/novo_zoneamento/';
 let contornoLote = null;
 let anelAlvo = null;
+let jaVoou = false;
 
 function areaPoligono(anel) {
   const lat0 = anel.reduce((s, p) => s + p[1], 0) / anel.length;
