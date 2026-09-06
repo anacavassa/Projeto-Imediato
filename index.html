@@ -89,6 +89,17 @@
   .enviando{font-size:13.5px;color:var(--texto2);margin-top:12px}
   .ok{background:#eef7f0;border:1px solid #bfe0c8;border-radius:9px;padding:13px 15px;
     font-size:13.5px;color:#2f6b41;margin-top:14px;line-height:1.6}
+
+  /* cartorio (06/09/2026) */
+  .cartorio{background:#fff;border:1.5px solid var(--borda);border-left:4px solid var(--petroleo);
+    border-radius:0 9px 9px 0;padding:14px 16px;margin-top:12px;font-size:14.5px;line-height:1.6}
+  .cartorio .qual{font-size:16.5px;font-weight:700;color:var(--petroleo);display:block;margin:3px 0 5px}
+  .cartorio .ressalva{font-size:12.5px;color:var(--texto2);margin-top:8px;display:block}
+  .cartorio.duvida{border-left-color:#c9a227;background:#fdf9ef}
+  .cartorio.exato{border-left-color:#3f8f5a;background:#f2f9f4}
+  .cnm-caixa{margin-top:14px;border:1.5px dashed var(--borda);border-radius:10px;padding:14px;background:#fff}
+  .cnm-caixa .titulo{font-size:13px;font-weight:600;margin-bottom:4px}
+  .cnm-caixa .onde{font-size:12.5px;color:var(--texto2);margin-bottom:9px;line-height:1.5}
   @media (max-width:560px){ .opcoes.duas{grid-template-columns:1fr} .cartao{padding:24px 20px} }
 </style>
 </head>
@@ -119,6 +130,20 @@
   </p>
 </div>
 
+
+<script>
+// Cartorios de Registro de Imoveis de Campinas.
+// cns: dos 4 CNM reais conferidos (todos passaram no digito verificador).
+// setores: 4 primeiros digitos do codigo cartografico -> cartorio provavel,
+//          com o grau de confianca do que a base sustenta.
+var CARTORIOS = {"cns":{"122309":"1","123851":"2","113274":"3","113464":"4"},"setores":{"4313":{"ri":"4","n":11,"c":"baixa"},"3442":{"ri":"1","n":7,"c":"baixa"},"4152":{"ri":"4","n":11,"c":"confirmada"},"3431":{"ri":"3","n":21,"c":"baixa"},"3422":{"ri":"1","n":10,"c":"baixa"},"3232":{"ri":"2","n":13,"c":"alta"},"3161":{"ri":"2","n":1,"c":"media"},"3412":{"ri":"2","n":18,"c":"alta"},"3264":{"ri":"1","n":36,"c":"confirmada"},"3423":{"ri":"1","n":26,"c":"baixa"},"4311":{"ri":"4","n":4,"c":"baixa"},"3432":{"ri":"3","n":8,"c":"alta"},"3262":{"ri":"1","n":34,"c":"baixa"},"3421":{"ri":"1","n":32,"c":"baixa"},"3263":{"ri":"2","n":9,"c":"baixa"},"3362":{"ri":"3","n":7,"c":"alta"},"3361":{"ri":"3","n":2,"c":"media"},"3252":{"ri":"2","n":5,"c":"alta"},"3424":{"ri":"1","n":4,"c":"alta"},"3162":{"ri":"2","n":2,"c":"media"},"3411":{"ri":"2","n":8,"c":"alta"},"3434":{"ri":"3","n":15,"c":"alta"},"3443":{"ri":"3","n":11,"c":"alta"},"3414":{"ri":"2","n":17,"c":"baixa"},"3433":{"ri":"3","n":5,"c":"baixa"},"3441":{"ri":"3","n":17,"c":"baixa"},"3342":{"ri":"3","n":2,"c":"media"},"3452":{"ri":"3","n":15,"c":"alta"},"3453":{"ri":"3","n":2,"c":"media"},"4312":{"ri":"4","n":10,"c":"alta"},"3344":{"ri":"3","n":5,"c":"alta"},"3234":{"ri":"2","n":7,"c":"confirmada"},"4151":{"ri":"1","n":3,"c":"baixa"},"3164":{"ri":"2","n":2,"c":"media"},"3244":{"ri":"1","n":13,"c":"baixa"},"3461":{"ri":"3","n":5,"c":"confirmada"},"3242":{"ri":"1","n":12,"c":"alta"},"3343":{"ri":"3","n":2,"c":"media"},"4153":{"ri":"4","n":7,"c":"alta"},"3214":{"ri":"2","n":5,"c":"alta"},"3413":{"ri":"3","n":5,"c":"alta"},"3261":{"ri":"2","n":11,"c":"baixa"},"1463":{"ri":"2","n":1,"c":"media"},"3444":{"ri":"3","n":3,"c":"alta"},"3251":{"ri":"2","n":3,"c":"alta"},"4154":{"ri":"4","n":2,"c":"media"},"3322":{"ri":"2","n":4,"c":"baixa"},"3233":{"ri":"2","n":4,"c":"alta"},"3364":{"ri":"3","n":3,"c":"alta"},"4111":{"ri":"1","n":1,"c":"media"},"4331":{"ri":"1","n":1,"c":"media"}},"bairros":{"VILLE SAINTE ANNE":"4","JARDIM ITATIAIA":"1","RESIDENCIAL ENTRE VERDES":"4","JARDIM IBIRAPUERA":"3","CHACARAS BELA VISTA - FAZ SANTO ANTONIO":"4","CIDADE UNIVERSITARIA CAMPINEIRA":"2","JARDIM APARECIDA":"2","BONFIM":"2","JARDIM CHAPADAO":"2","ARRUAMENTO IAPC":"1","SOUZAS":"2","PARQUE INDUSTRIAL":"3","PARQUE IMPERADOR":"1","TAQUARAL":"1","RESIDENCIAL VISTA CAMPINAS":"1","JARDIM BELA VISTA":"1","RESIDENCIAL CITTA DI FIRENZE":"3","JARDIM CARLOS LOURENCO":"1","RESIDENCIAL SAO JOSE":"3","ALPHAVILLE DOM PEDRO ZERO":"1","JARDIM SANTA GENEBRA - 1ª GLEBA":"2","BAIRRO DAS PALMEIRAS - CLUBE HIPICA":"1","JARDIM MIRASSOL":"2","JARDIM CHAPADAO - CONTINUACAO":"2","RESIDENCIAL SWISS PARK":"3","VILA BRANDINA":"1","SUBDIVISAO DE JOSE DE ALMEIDA":"1","LOTEAMENTO ARTESANO":"1","JARDIM DO SOL":"2","PARQUE JAMBEIRO - 2ª PARTE":"3","RESIDENCIAL PARQUE DA FAZENDA":"3","VILA ESTADIO":"2","VILA SAO PAULO":"3","ARTESANO":"1","JARDIM SANTA LUCIA - 2ª PARTE":"2","VILA JOAQUIM INACIO":"3","VILA MARIETA":"3","BAIRRO BOTAFOGO":"2","GLEBA DA LEROY MERLIN":"1","BAIRRO PONTE PRETA":"3","PARQUE TROPICAL":"3","RESIDENCIAL BELA ALIANCA":"3","LOTEAMENTO RESIDENCIAL ENTRE VERDES (SOUSAS)":"4","JARDIM ITATINGA":"3","RESIDENCIAL ARBORAIS":"1","VILA NOVA":"2","FAZENDA SANTANA DA LAPA":"4","BRAO GERALDO":"2","JARDIM SAMAMBAIA":"3","ARRUAMENTO NOVA CAMPINAS":"1","RESIDENCIAL ARBORETO JEQUITIBAS":"4","VILA PRESIDENTE CAMPOS SALES":"3","JARDIM SANTA GENEBRA - 2ª GLEBA 4ª PARTE":"2","JARDIM BRASIL":"2","RESIDENCIAL VILAS DO RIO":"3","GLEBA (COND COLINAS SANTANDER - PRC43131395, QT30022 - GL51)":"1","DISTRITO INDUSTRIAL":"3","JOAQUIM EGIDIO":"4","JARDIM BOTANICO DE CAMPINAS - PARTE 2":"4","JARDIM NOSSA SENHORA AUXILIADORA":"2","FAZENDA TAQUARAL":"2","RESIDENCIAL JATIBELA":"1","RESIDENCIAL PEDRA ALTA":"1","VILA IZA":"1","CHACARA TRES MARIAS":"2","CHACARAS SAO RAFAEL":"1","JARDIM SANTA JUDITH":"3","TERRAS DE SAO FRANCISCO":"1","VILA NOVA CAMPINAS":"1","SWISS PARK":"3","PARQUE DOS ALECRINS":"1","RESIDENCIAL COLINA DAS NASCENTES":"3","RESIDENCIAL JAGUARI":"4","CHACARAS SANTA MARGARIDA":"2","LOTEAMENTO TERRAS DE SAO FRANCISCO":"1","JARDIM SAO JUDAS TADEU":"3","DIC VI - CONJUNTO HABITACIONAL SANTO DIAS":"3","JARDIM EULNA":"2","JARDIM NOVO CAMPOS ELISEOS":"3","JARDIM CARLOS GOMES":"1","CHACARA DA BARRA":"1","CAMBUI":"1","JARDIM GARCIA":"3","JARDIM SANTANA":"1","GLEBA 17A-1A ( 32641331 - RESULTANTE DO DESDOBRO DA GLEBA 17-A - QT 30014)":"1","ARRUAMENTO ROSSI & BORGHI":"2","RESIDENCIAL VILLE SAINTE ANNE":"4","CHACARAS SAO DOMINGOS":"3","VILA INDUSTRIAL":"3","PARQUE JAMBEIRO":"3","JARDIM DAS PAINEIRAS":"1","PONTE PRETA":"3","VILLAGE CAMPINAS":"2","JARDIM SAO VICENTE":"3","GLEBA 1A- (QT30029- DESMEMBRADA DA GLEBA 1 DA FAZ, SETE QUEDAS)- 345224":"3","TERRAS DE SAO FARNCISCO":"1","PARQUE RURAL FAZENDA SANTA CANDIDA":"2","RESIDENCIAL ESTANCIA EUDOXIA":"2","CAMPO DOS AMARAES":"2","CIDADE SATELITE IRIS":"3","BAIRRO CASARAO":"1","VILA PARAISO":"3","PARQUE JATIBAIA":"4","VILA ITAPURA":"2","NOVO JARDIM SAO JOSE":"1","JARDIM BRANDINA":"1","PARQUE DAS UNIVERSIDADES":"2","RESIDENCIAL PARQUE DAS ARAUCARIAS":"4","JARDIM CONCEICAO":"4","JARDIM NOEMIA":"3","JARDIM NOVA EUROPOA":"3","ARRUAMENTO ROSSI & BORGHI - GUANABARA":"2","PARQUE CEASA":"2","PARQUE VIA NORTE - 4ª PARTE":"2","JARDIM NOVA EUROPA (CONTINUACAO)":"3","MANSOES SANTO ANTONIO":"2","CHACARAS PRIMAVERA":"2","TECHNO PARK CAMPINAS":"2","GLEBA A - UNI (QT30029 -ORIUNDA DA ANEXCAO DAS GLEBAS A/B)- 34612497":"3","RESIDENCIAL VITORIA ROPOLE":"2","PARQUE VIA NORTE":"2","JARDIM DO LAGO":"3","JARDIM FLAMBOYANT":"1","CHACARAS RECREIO UIRAPURU - GLEBA":"2","RESIDENCIAL SAINT CLAUDE":"1","RESIDENCIAL TERRAS DO BARAO":"2","PARQUE SAO QUIRINO":"1","PARQUE DA FIGUEIRA":"3","PARQUE SAO MARTINHO":"3","RESIDENCIAL GLARUS":"3","JARDIM PROENCA - CONTINUACAO\nJARDIM PROENCA - CONTINUACAO":"1","VILA PROOST DE SOUZA":"1","PARQUE PRADO":"3","RES PARQUE DA FAZENDA":"3","RESIDENCIAL CITTA DI SALERNO":"3","JARDIM GUANABARA":"2","JARDIM BOA ESPERANCA CONT":"1","VILA MOLINA":"3","IMPERADOR":"1","VILA NOGUEIRA":"1","PARQUE XANGRILA":"1","GLEBA (FAZ MARIA AMELIA, PRC 3422-6, QT 30022)":"1","VILA CARLITO":"3","JARDIM AURELIA":"3","FUNDACAO DA CASA POPULAR":"3","PARQUE VIA NORTE - 2ª PARTE":"2","GLEBA 029 - (QUARTEIRAO 30013- DESTACADA DA FAZ, SANTA GENEBRA) - 32346182":"2","JARDIM EULINA":"2","JARDIM ANTONIO VON ZUBEN":"3","JARDIM IV CENTENARIO":"2","JARDIM QUARTO CENTENARIO":"2","LOTEAMENTO RESIDENCIAL ENTRE VERDES":"4","PARQUE XANGRILA - 1ª PARTE":"1","CHACARAS DE RECREIO BARAO":"2","ARRUAMENTO - DAE":"1","JARDIM PARANAPANEMA":"1","PARQUE VIA NORTE - 4 PARTE\nPARQUE VIA NORTE":"2","CONDOMINIO  FAZENDA TAQUARAL":"2","ALPHAVILLE DOM PEDRO 3":"1","JARDIM BOA ESPERANCA":"1","PARQUE DAS SAPUCAIAS":"1","VILLE SAINTE-HELENE":"4","VILA SANTA LUISA":"2","JARDIM BOM SUCESSO":"3","PARQUE RESIDENCIAL VILA UNIAO":"3","CHACARAS BELVEDERE":"2","JARDIM SAO PEDRO - VIRACOPOS":"3","LOTEAMENTO CHACARA PRADO":"3","VILA EDUARDO LANE":"1","JD CHAPADAO -CONT":"2","JARDIM MONTE BELLO":"1","JARDIM BONFIM":"2","JARDIM SANTA MONICA":"2","PARQUE JAMBEIRO - 1ª PARTE":"3","PARQUE TAQUARAL":"2","SITIOS DE RECREIO GRAMADO":"1","JARDIM SANTA GENEBRA":"2","JARDIM BOTANICO (SOUSAS)":"4","JARDIM ITAYU":"1","JARDIM MYRIAN MOREIRA DA COSTA":"1","PARQUE ITALIA":"3","VILA HOLLANDIA":"2","RESIDENCIL FLAVIA":"3","CHACARA SAO GERALDO":"1","JARDIM SANTA LUCIA":"3","CHACARA LULU DE PONTES":"3","JARDIM BOTANICO DE CAMPINAS":"4","JARDIM INTERLAGOS":"3","CONDOMINIO FAZENDA TAQUARAL":"2","CITTA DE SALERNO":"3","LOTEAMENTO RESIDENCIAL ENTREVERDES":"4","VILA SILVA TELLES":"1","LOTEAMENTO RESIDENCIAL PEDRA ALTA (SOUSAS)":"1"}};
+var ENDERECO_RI = {
+  '1': {nome: '1&ordm; Oficial de Registro de Im&oacute;veis de Campinas', site: 'https://www.1ri.com.br/'},
+  '2': {nome: '2&ordm; Oficial de Registro de Im&oacute;veis de Campinas', site: 'https://www.2ricampinas.com.br/'},
+  '3': {nome: '3&ordf; Oficiala de Registro de Im&oacute;veis de Campinas', site: 'https://www.3ricampinas.com.br/'},
+  '4': {nome: '4&ordm; Oficial de Registro de Im&oacute;veis de Campinas', site: 'https://4ricampinas.com.br/'}
+};
+</script>
 <script src="dados.js"></script>
 <script>
 // ---------------------------------------------------------------------------
@@ -131,7 +156,7 @@ const resposta = {
   rua: '', numero: '', codCart: '', bairro: '', zona: '', coords: null,
   tipo: '', situacao: '', area: '', planta: '', documentos: [],
   tentouAntes: '', protocolo: '', nome: '', whatsapp: '', relato: '',
-  consentimento: false, anexos: []
+  consentimento: false, anexos: [], cartorio: '', matriculaNum: ''
 };
 
 let etapa = 0;
@@ -370,8 +395,17 @@ function buscarImovel() {
         ${resposta.bairro ? `<div><strong>Bairro:</strong> ${esc(tituloTexto(resposta.bairro))}</div>` : ''}
         ${resposta.zona ? `<div><strong>Zona:</strong> ${esc(resposta.zona)}</div>` : ''}
       </div>
-      <div id="mapa"></div>`;
+      ${blocoCartorio(resposta.codCart, resposta.bairro)}
+      <div id="mapa"></div>
+      <div class="cnm-caixa">
+        <div class="titulo">Tem a matr&iacute;cula do im&oacute;vel? Confira o cart&oacute;rio com exatid&atilde;o</div>
+        <div class="onde">Digite o <strong>CNM</strong> impresso no alto da matr&iacute;cula
+          (formato 123456.2.0001234-56).</div>
+        <input type="text" id="cnm" placeholder="000000.2.0000000-00" autocomplete="off">
+        <div id="respostaCNM"></div>
+      </div>`;
     desenharMapa(achado.c, true);
+    montarCNM();
   } else {
     const r = ruas.find(x => chaveRua(x.n) === chave) || ruas.find(x => x.b.includes(semAcento(rua)));
     resposta.codCart = ''; resposta.zona = ''; resposta.bairro = '';
@@ -418,6 +452,7 @@ function montarMensagem() {
   if (resposta.bairro) L.push('*Bairro:* ' + tituloTexto(resposta.bairro));
   if (resposta.codCart) L.push('*Código cartográfico:* ' + resposta.codCart);
   if (resposta.zona) L.push('*Zona:* ' + resposta.zona);
+  if (resposta.cartorio) L.push('*Cartório:* ' + resposta.cartorio.replace(/&[a-z]+;/g, ''));
   L.push('*Tipo:* ' + resposta.tipo);
   L.push('*Situação:* ' + resposta.situacao);
   if (resposta.area) L.push('*Área construída:* ' + resposta.area + ' m²');
@@ -439,6 +474,7 @@ function telaFinal() {
   add('Bairro', tituloTexto(resposta.bairro));
   add('Código cartográfico', resposta.codCart || 'a levantar no processo');
   add('Zona', resposta.zona);
+  add('Cartório de registro', resposta.cartorio);
   add('Tipo', resposta.tipo);
   add('Situação', resposta.situacao);
   add('Área construída', resposta.area ? resposta.area + ' m²' : '');
@@ -502,6 +538,89 @@ async function enviarParaNetlify() {
   }
 }
 
+
+// ---------------------------------------------------------------------------
+// Cartorio de registro de imoveis
+// ---------------------------------------------------------------------------
+function validaCNM(txt) {
+  const limpo = (txt || '').replace(/[^\d]/g, '');
+  if (limpo.length !== 16) return null;
+  const cns = limpo.slice(0, 6), livro = limpo[6], matricula = limpo.slice(7, 14), dv = limpo.slice(14);
+  // ISO 7064 MOD 97-10, o mesmo padrao do IBAN
+  const esperado = String(98 - (Number(limpo.slice(0, 14)) * 100) % 97).padStart(2, '0');
+  return {cns, livro, matricula: Number(matricula), dv, valido: esperado === dv, esperado};
+}
+
+function cartorioPorCNM(txt) {
+  const r = validaCNM(txt);
+  if (!r) return null;
+  r.ri = CARTORIOS.cns[r.cns] || null;
+  return r;
+}
+
+function cartorioPorCodigo(cod) {
+  const setor = String(cod || '').replace(/\D/g, '').slice(0, 4);
+  if (setor.length < 4) return null;
+  const s = CARTORIOS.setores[setor];
+  return s ? {ri: s.ri, confianca: s.c, registros: s.n, setor} : {ri: null, confianca: 'sem dado', setor};
+}
+
+function blocoCartorio(cod, bairro) {
+  const r = cartorioPorCodigo(cod);
+  if (!r) return '';
+  const info = r.ri ? ENDERECO_RI[r.ri] : null;
+  if (!r.ri || r.confianca === 'sem dado') {
+    return `<div class="cartorio duvida">
+      <strong>Cart&oacute;rio de registro</strong>
+      <span class="qual">N&atilde;o identificado por aqui</span>
+      Este setor ainda n&atilde;o tem refer&ecirc;ncia na nossa base. O cart&oacute;rio consta na
+      <strong>matr&iacute;cula do im&oacute;vel</strong> &mdash; e n&oacute;s levantamos isso no diagn&oacute;stico.</div>`;
+  }
+  if (r.confianca === 'baixa') {
+    return `<div class="cartorio duvida">
+      <strong>Cart&oacute;rio de registro</strong>
+      <span class="qual">Prov&aacute;vel: ${info.nome}</span>
+      Esta regi&atilde;o fica <strong>na divisa entre cart&oacute;rios</strong> &mdash; no centro de Campinas a
+      divis&atilde;o chega a ser rua a rua, e por faixa de numera&ccedil;&atilde;o.
+      <span class="ressalva">Confirme antes de pedir certid&atilde;o. Se voc&ecirc; tem a matr&iacute;cula em m&atilde;os,
+      o campo abaixo d&aacute; a resposta exata.</span></div>`;
+  }
+  const forca = r.confianca === 'confirmada' ? 'confirmado em matr&iacute;cula emitida'
+                                             : `${r.registros} im&oacute;veis deste setor na mesma serventia`;
+  return `<div class="cartorio">
+    <strong>Cart&oacute;rio de registro</strong>
+    <span class="qual">${info.nome}</span>
+    Refer&ecirc;ncia obtida do setor <strong>${r.setor}</strong> do c&oacute;digo cartogr&aacute;fico &mdash; ${forca}.
+    <span class="ressalva">Refer&ecirc;ncia para orienta&ccedil;&atilde;o. A confirma&ccedil;&atilde;o definitiva
+    &eacute; do pr&oacute;prio cart&oacute;rio.</span></div>`;
+}
+
+function montarCNM() {
+  const campo = document.getElementById('cnm');
+  if (!campo) return;
+  const alvo = document.getElementById('respostaCNM');
+  campo.addEventListener('input', () => {
+    const t = campo.value.trim();
+    if (t.replace(/\D/g, '').length < 16) { alvo.innerHTML = ''; return; }
+    const r = cartorioPorCNM(t);
+    if (!r || !r.valido) {
+      alvo.innerHTML = `<div class="cartorio duvida"><strong>C&oacute;digo n&atilde;o confere</strong>
+        <span class="ressalva">O d&iacute;gito verificador n&atilde;o bate &mdash; confira se algum n&uacute;mero
+        saiu trocado. Esperado: ${r ? r.esperado : '--'}</span></div>`;
+      return;
+    }
+    const info = r.ri ? ENDERECO_RI[r.ri] : null;
+    resposta.cartorio = info ? info.nome : '';
+    resposta.matriculaNum = r.matricula;
+    alvo.innerHTML = `<div class="cartorio exato">
+      <strong>C&oacute;digo v&aacute;lido &#10003;</strong>
+      <span class="qual">${info ? info.nome : 'Serventia ' + r.cns}</span>
+      Livro ${r.livro} &middot; matr&iacute;cula <strong>${r.matricula.toLocaleString('pt-BR')}</strong>
+      <span class="ressalva">Identifica&ccedil;&atilde;o exata: vem do pr&oacute;prio n&uacute;mero da matr&iacute;cula,
+      conferido pelo d&iacute;gito verificador.</span></div>`;
+  });
+}
+
 function desenhar() {
   const e = etapas[etapa];
   document.getElementById('bolinhas').innerHTML = etapas.map((_, i) =>
@@ -555,5 +674,3 @@ if (typeof RUAS === 'undefined') {
 </script>
 </body>
 </html>
-
-<!-- deploy para o Netlify reler o formulario (deteccao ligada em 06/09/2026) -->
