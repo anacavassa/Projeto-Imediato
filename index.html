@@ -158,7 +158,7 @@ var ENDERECO_RI = {
   '4': {nome: '4&ordm; Oficial de Registro de Im&oacute;veis de Campinas', site: 'https://4ricampinas.com.br/'}
 };
 </script>
-<script src="dados.js"></script>
+<script src="dados.js?v=3"></script>
 <script>
 // ---------------------------------------------------------------------------
 // Simulador em etapas. Sem servidor e sem banco: o resultado é montado como
@@ -171,7 +171,7 @@ const resposta = {
   tipo: '', situacao: '', area: '', planta: '', documentos: [],
   tentouAntes: '', protocolo: '', nome: '', whatsapp: '', relato: '',
   consentimento: false, cartorio: '', matriculaNum: '',
-  macrozona: '', quarteirao: '', areaLote: ''
+  macrozona: '', quarteirao: '', areaLote: '', matricula: ''
 };
 
 let etapa = 0;
@@ -403,7 +403,7 @@ function buscarImovel() {
       <div id="mapa"></div>
       <div class="dica-mapa"><strong>Confirme clicando no seu imóvel</strong> na foto de satélite.
         Assim buscamos o código e o desenho do lote no ponto exato.</div>
-      <div id="fichaPonto">${blocoCartorio(resposta.codCart, resposta.bairro)}</div>
+      <div id="fichaPonto">${blocoCartorio(resposta.codCart, resposta.bairro)}${blocoMatricula(resposta.codCart)}</div>
       <div class="cnm-caixa">
         <div class="titulo">Tem a matr&iacute;cula do im&oacute;vel? Confira o cart&oacute;rio com exatid&atilde;o</div>
         <div class="onde">Digite o <strong>CNM</strong> impresso no alto da matr&iacute;cula
@@ -512,6 +512,7 @@ function montarMensagem() {
   if (resposta.codCart) L.push('*Código cartográfico:* ' + resposta.codCart);
   if (resposta.zona) L.push('*Zona:* ' + resposta.zona);
   if (resposta.cartorio) L.push('*Cartório:* ' + resposta.cartorio.replace(/&[a-z]+;/g, ''));
+  if (resposta.matricula) L.push('*Matrícula (a confirmar):* ' + resposta.matricula);
   L.push('*Tipo:* ' + resposta.tipo);
   L.push('*Situação:* ' + resposta.situacao);
   if (resposta.area) L.push('*Área construída:* ' + resposta.area + ' m²');
@@ -535,6 +536,7 @@ function telaFinal() {
   add('Zona', resposta.zona);
   add('Área do lote', resposta.areaLote ? resposta.areaLote + ' m²' : '');
   add('Quarteirão', resposta.quarteirao);
+  add('Matrícula (a confirmar)', resposta.matricula);
   add('Cartório de registro', resposta.cartorio);
   add('Tipo', resposta.tipo);
   add('Situação', resposta.situacao);
@@ -632,6 +634,26 @@ function cartorioPorCodigo(cod) {
   return {ri: null, confianca: 'sem dado', chave: n.slice(0, 4), nivel: 'setor'};
 }
 
+
+function blocoMatricula(cod) {
+  if (typeof MATRICULAS === 'undefined') return '';
+  const ns = MATRICULAS[String(cod || '').replace(/\D/g, '')];
+  if (!ns || !ns.length) return '';
+  if (ns.length > 1) {
+    return `<div class="cartorio duvida">
+      <strong>Matr&iacute;cula</strong>
+      <span class="qual">${ns.length} matr&iacute;culas neste c&oacute;digo</span>
+      &Eacute; o padr&atilde;o de condom&iacute;nio: cada unidade tem a sua. A do seu im&oacute;vel
+      sai na consulta ao cart&oacute;rio, com o n&uacute;mero do apartamento.</div>`;
+  }
+  return `<div class="cartorio">
+    <strong>Matr&iacute;cula</strong>
+    <span class="qual">${ns[0].toLocaleString('pt-BR')}</span>
+    Consta assim no processo da Prefeitura para este c&oacute;digo cartogr&aacute;fico.
+    <span class="ressalva">Informado pelo requerente no protocolo &mdash; confirme no cart&oacute;rio
+    antes de pedir certid&atilde;o.</span></div>`;
+}
+
 function blocoCartorio(cod, bairro) {
   const r = cartorioPorCodigo(cod);
   if (!r) return '';
@@ -720,6 +742,7 @@ async function consultarPonto(lon, lat) {
     resposta.macrozona = z.macrozona || '';
     resposta.quarteirao = z.quarteirao_num || '';
     resposta.coords = [lon, lat];
+    resposta.matricula = matriculaDoCodigo(c.cod_cartografico);
 
     let areaLote = null;
     if (c.poligono && contornoLote !== undefined) {
@@ -746,6 +769,12 @@ function telhadoProximo(lon, lat) {
   return null; // ligado na proxima etapa
 }
 
+function matriculaDoCodigo(cod) {
+  if (typeof MATRICULAS === 'undefined') return '';
+  const ns = MATRICULAS[String(cod || '').replace(/\D/g, '')];
+  return (ns && ns.length === 1) ? String(ns[0]) : '';
+}
+
 function fichaDoPonto(areaLote) {
   const it = (rot, val, destaque) => val
     ? `<div class="item"><div class="rot">${rot}</div><div class="val${destaque ? ' destaque' : ''}">${val}</div></div>` : '';
@@ -757,7 +786,8 @@ function fichaDoPonto(areaLote) {
       ${it('Quarteirão', resposta.quarteirao)}
       ${it('Macrozona', resposta.macrozona)}
     </div>
-    ${blocoCartorio(resposta.codCart, resposta.bairro)}`;
+    ${blocoCartorio(resposta.codCart, resposta.bairro)}
+    ${blocoMatricula(resposta.codCart)}`;
 }
 
 function desenhar() {
