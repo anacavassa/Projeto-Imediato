@@ -185,6 +185,7 @@ const TIPO_LOGRADOURO = /^(RUA|R|AVENIDA|AV|TRAVESSA|TV|PRACA|PRAÇA|PC|ALAMEDA|
 const chaveRua = s => semAcento(s).trim().replace(TIPO_LOGRADOURO, '').trim();
 
 const WMS = 'https://wms2.campinas.sp.gov.br/wmsmap/wms_zoneamento.map';
+const CAMPINAS_CENTRO = [-22.9056, -47.0608];  // Catedral, centro geografico util
 // O servidor da Prefeitura codifica DE NOVO parâmetros que já chegam
 // codificados ("%2F" vira "%252F") e devolve erro no lugar da imagem.
 // Por isso a URL é montada à mão, com ":" e "/" literais.
@@ -451,8 +452,10 @@ function desenharMapa(coord, precisa, rua) {
   const el = document.getElementById('mapa');
   if (!el) return;
   if (mapa) { mapa.remove(); mapa = null; }
+  // comeca com a cidade toda e voa ate o imovel: mostra onde ele fica em Campinas
+  // antes de aproximar, para a pessoa se situar
   mapa = L.map(el, { zoomControl: true, scrollWheelZoom: false })
-          .setView([coord[1], coord[0]], precisa ? 19 : 18);
+          .setView(CAMPINAS_CENTRO, 11);
 
   // Esri World Imagery: recente e sem chave. A ortofoto da Prefeitura e de 2014 -
   // util para comparar, mas mostra terreno vazio onde hoje ha construcao.
@@ -468,15 +471,30 @@ function desenharMapa(coord, precisa, rua) {
                    { 'Limites de lote': lotes }).addTo(mapa);
   mapa.on('click', e => consultarPonto(e.latlng.lng, e.latlng.lat));
 
-  if (precisa) L.circleMarker([coord[1], coord[0]], {
-    radius: 9, weight: 3, color: '#fff', fillColor: '#FF6900', fillOpacity: 1
+  const alvo = L.circleMarker([coord[1], coord[0]], {
+    radius: 10, weight: 3, color: '#fff', fillColor: '#FF6900', fillOpacity: 1
   }).addTo(mapa);
+  alvo.bindTooltip('Seu imóvel', { permanent: false, direction: 'top' });
 
-  // sem o numero exato: enquadra a rua inteira e etiqueta os vizinhos conhecidos
-  if (!precisa && rua) {
-    const limites = marcarVizinhos(rua);
-    if (limites) mapa.fitBounds(limites, { padding: [40, 40], maxZoom: 18 });
-  }
+  const limites = (!precisa && rua) ? marcarVizinhos(rua) : null;
+
+  // pequena pausa para a pessoa ver o ponto na cidade antes da aproximacao
+  const aproxima = (animado) => {
+    const opc = animado ? { duration: 2.2 } : { animate: false };
+    if (limites) {
+      const o = Object.assign({ padding: [40, 40], maxZoom: 18 }, opc);
+      animado ? mapa.flyToBounds(limites, o) : mapa.fitBounds(limites, o);
+    } else {
+      const z = precisa ? 19 : 18;
+      animado ? mapa.flyTo([coord[1], coord[0]], z, opc)
+              : mapa.setView([coord[1], coord[0]], z, opc);
+    }
+  };
+  setTimeout(() => {
+    aproxima(true);
+    // se a animacao nao rodar (movimento reduzido, aba em segundo plano), garante o destino
+    setTimeout(() => { if (mapa && mapa.getZoom() < 14) aproxima(false); }, 3200);
+  }, 900);
 }
 
 const MINUSCULAS = new Set(['DE','DA','DO','DAS','DOS','E']);
@@ -713,7 +731,7 @@ async function consultarPonto(lon, lat) {
         if (contornoLote) mapa.removeLayer(contornoLote);
         contornoLote = L.polygon(anel.map(p => [p[1], p[0]]),
           { color: '#FF6900', weight: 3, fillColor: '#FF6900', fillOpacity: .12 }).addTo(mapa);
-        mapa.fitBounds(contornoLote.getBounds(), { padding: [30, 30], maxZoom: 19 });
+        mapa.flyToBounds(contornoLote.getBounds(), { padding: [30, 30], maxZoom: 19, duration: 1.4 });
       } catch (e) { /* sem poligono: segue so com o codigo */ }
     }
     if (alvo) alvo.innerHTML = fichaDoPonto(areaLote);
