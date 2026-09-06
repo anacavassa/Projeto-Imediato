@@ -217,7 +217,7 @@ const resposta = {
   tentouAntes: '', protocolo: '', nome: '', whatsapp: '', relato: '',
   consentimento: false, cartorio: '', matriculaNum: '',
   macrozona: '', quarteirao: '', areaLote: '', matricula: '',
-  areaTelhado: '', edificacoes: '', telhadoExato: true
+  areaTelhado: '', edificacoes: '', telhadoExato: true, telhadoAlemDoLote: false
 };
 
 let etapa = 0;
@@ -969,9 +969,17 @@ async function consultarPonto(lon, lat, interno) {
         const anel = JSON.parse(c.poligono).coordinates[0];
         const t = await telhadoDoLote(anel, lon, lat);
         if (t && t.area >= 12) {
-          resposta.areaTelhado = t.area;
-          resposta.edificacoes = t.edificacoes;
-          resposta.telhadoExato = t.exato;
+          // telhado maior que o lote e impossivel: a construcao identificada
+          // atravessa mais de um lote e a area nao e atribuivel a este
+          if (areaLote && t.area > areaLote * 1.2) {
+            resposta.telhadoAlemDoLote = true;
+            resposta.areaTelhado = '';
+          } else {
+            resposta.telhadoAlemDoLote = false;
+            resposta.areaTelhado = t.area;
+            resposta.edificacoes = t.edificacoes;
+            resposta.telhadoExato = t.exato;
+          }
           if (alvo) alvo.innerHTML = fichaDoPonto(areaLote);
         }
       } catch (e) { /* sem telhado, a consulta continua valendo */ }
@@ -1044,6 +1052,15 @@ function matriculaDoCodigo(cod) {
 }
 
 
+
+function avisoTelhadoAlem() {
+  return `<div class="aviso" style="margin-top:12px">
+    <strong>Construção maior que o lote.</strong> A edificação identificada na imagem aérea
+    se estende além deste terreno — é o padrão de prédio ou conjunto sobre vários lotes.
+    Por isso a área de telhado não pode ser atribuída só a ele. O levantamento em campo
+    é o que separa o que pertence a cada matrícula.</div>`;
+}
+
 function avisoTelhado() {
   const t = Number(resposta.areaTelhado).toLocaleString('pt-BR');
   const n = resposta.edificacoes;
@@ -1067,7 +1084,7 @@ function fichaDoPonto(areaLote) {
       ${it('Quarteirão', resposta.quarteirao)}
       ${it('Macrozona', resposta.macrozona)}
     </div>
-    ${resposta.areaTelhado ? avisoTelhado() : ''}
+    ${resposta.areaTelhado ? avisoTelhado() : (resposta.telhadoAlemDoLote ? avisoTelhadoAlem() : '')}
     ${blocoCartorio(resposta.codCart, resposta.bairro)}
     ${blocoMatricula(resposta.codCart)}`;
 }
