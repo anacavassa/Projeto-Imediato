@@ -77,10 +77,31 @@
   .rodape{text-align:center;font-size:12.5px;color:var(--texto2);margin-top:22px;line-height:1.7}
   .rodape a{color:var(--laranja)}
   .carregando{text-align:center;color:var(--texto2);padding:40px 0;font-size:14.5px}
+
+  /* anexo e consentimento (06/09/2026) */
+  .anexo{border:1.5px dashed var(--borda);border-radius:10px;padding:16px;background:#fff;margin-top:6px}
+  .anexo input[type=file]{border:none;padding:0;font-size:14px}
+  .anexo .dica{font-size:12.5px;color:var(--texto2);margin-top:8px;line-height:1.5}
+  .consent{display:flex;gap:11px;align-items:flex-start;border:1.5px solid var(--borda);
+    border-radius:10px;padding:14px 15px;margin-top:16px;font-size:13.5px;line-height:1.55;background:#fff}
+  .consent input{accent-color:var(--laranja);width:17px;height:17px;flex:0 0 auto;margin:2px 0 0}
+  .consent.marcada{border-color:var(--laranja);background:#fff8f2}
+  .enviando{font-size:13.5px;color:var(--texto2);margin-top:12px}
+  .ok{background:#eef7f0;border:1px solid #bfe0c8;border-radius:9px;padding:13px 15px;
+    font-size:13.5px;color:#2f6b41;margin-top:14px;line-height:1.6}
   @media (max-width:560px){ .opcoes.duas{grid-template-columns:1fr} .cartao{padding:24px 20px} }
 </style>
 </head>
 <body>
+
+<form name="diagnostico" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" enctype="multipart/form-data" hidden>
+  <input type="hidden" name="form-name" value="diagnostico">
+  <input name="bot-field"><input name="nome"><input name="whatsapp">
+  <input name="endereco"><input name="codigo_cartografico"><input name="bairro"><input name="zona">
+  <input name="tipo"><input name="situacao"><input name="area"><input name="planta">
+  <input name="documentos"><input name="tentou_antes"><input name="protocolo">
+  <textarea name="relato"></textarea><input type="file" name="anexos"><input name="consentimento">
+</form>
 
 <div class="topo">
   <div class="marca">Projeto Imediato · CREA-SP 5069992055</div>
@@ -109,7 +130,8 @@ const ZAP = '5519999913300';
 const resposta = {
   rua: '', numero: '', codCart: '', bairro: '', zona: '', coords: null,
   tipo: '', situacao: '', area: '', planta: '', documentos: [],
-  tentouAntes: '', protocolo: '', nome: '', whatsapp: '', relato: ''
+  tentouAntes: '', protocolo: '', nome: '', whatsapp: '', relato: '',
+  consentimento: false, anexos: []
 };
 
 let etapa = 0;
@@ -224,13 +246,30 @@ const etapas = [
       <input type="text" id="whatsapp" placeholder="(19) 90000-0000" value="${esc(resposta.whatsapp)}">
       <label class="campo" for="relato">Quer contar mais alguma coisa? (opcional)</label>
       <textarea id="relato" placeholder="Escreva aqui o que achar importante">${esc(resposta.relato)}</textarea>
+      <label class="campo">Anexar documentos (opcional)</label>
+      <div class="anexo">
+        <input type="file" id="anexos" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.heic">
+        <div class="dica">IPTU, matr&iacute;cula, planta, alvar&aacute; ou projeto antigo.
+          Adianta muito a an&aacute;lise. PDF ou foto, at&eacute; 10 MB no total.</div>
+      </div>
+      <label class="consent" id="rotuloConsent">
+        <input type="checkbox" id="consentimento" ${resposta.consentimento ? 'checked' : ''}>
+        <span>Autorizo o uso dos dados e documentos enviados <strong>para a an&aacute;lise do meu
+        caso</strong>. Eles n&atilde;o s&atilde;o compartilhados com terceiros e podem ser
+        apagados a qualquer momento, a pedido.</span>
+      </label>
       <div class="erro" id="erroContato"></div>`,
     valida: () => {
       resposta.nome = document.getElementById('nome').value.trim();
       resposta.whatsapp = document.getElementById('whatsapp').value.trim();
       resposta.relato = document.getElementById('relato').value.trim();
+      resposta.anexos = Array.from(document.getElementById('anexos').files || []);
+      resposta.consentimento = document.getElementById('consentimento').checked;
       if (!resposta.nome) return 'Informe seu nome.';
       if (resposta.whatsapp.replace(/\D/g, '').length < 10) return 'Informe um WhatsApp válido, com DDD.';
+      if (!resposta.consentimento) return 'Marque a autorização de uso dos dados para continuar.';
+      const peso = resposta.anexos.reduce((s, a) => s + a.size, 0);
+      if (peso > 10 * 1024 * 1024) return 'Os anexos somam mais de 10 MB. Remova algum arquivo.';
       return null;
     }
   },
@@ -258,13 +297,22 @@ function multiEscolha(campo, itens) {
     </label>`).join('') + '</div>';
 }
 
+function ligarConsentimento() {
+  const c = document.getElementById('consentimento');
+  if (!c) return;
+  c.addEventListener('change', () =>
+    document.getElementById('rotuloConsent').classList.toggle('marcada', c.checked));
+  if (c.checked) document.getElementById('rotuloConsent').classList.add('marcada');
+}
+
 function ligarOpcoes() {
   document.querySelectorAll('.opcao input').forEach(inp => {
     inp.addEventListener('change', () => {
       const campo = inp.name;
       if (inp.type === 'radio') {
         resposta[campo] = inp.value;
-        document.querySelectorAll(`input[name="${campo}"]`).forEach(o =>
+        // escopo em .opcao: o formulario oculto do Netlify tem campos de mesmo nome
+        document.querySelectorAll(`.opcao input[name="${campo}"]`).forEach(o =>
           o.closest('.opcao').classList.toggle('marcada', o.checked));
       } else {
         const lista = resposta[campo];
@@ -406,10 +454,52 @@ function telaFinal() {
     <a href="${url}" target="_blank" rel="noopener" style="text-decoration:none">
       <button class="zap">Enviar para a engenheira no WhatsApp</button>
     </a>
+    <div id="avisoEnvio" class="enviando">Guardando seus dados&hellip;</div>
     <div class="aviso" style="margin-top:16px">
-      Ao enviar, o resumo acima já vai preenchido na conversa. A resposta com o diagnóstico
-      e a estimativa de custo chega em até 24 horas úteis.
+      Ao clicar no botão, o resumo acima já vai preenchido na conversa do WhatsApp. A resposta
+      com o diagnóstico e a estimativa de custo chega em até 24 horas úteis.
     </div>`;
+}
+
+
+// ---------------------------------------------------------------------------
+// Envio para o Netlify. O POST vai para a propria pagina, em multipart, que e o
+// unico formato que carrega arquivo. Se falhar, o resumo do WhatsApp continua
+// funcionando - o lead nunca depende so disto.
+let jaEnviou = false;
+async function enviarParaNetlify() {
+  if (jaEnviou) return;
+  jaEnviou = true;
+  const dados = new FormData();
+  dados.append('form-name', 'diagnostico');
+  dados.append('nome', resposta.nome);
+  dados.append('whatsapp', resposta.whatsapp);
+  dados.append('endereco', resposta.rua + (resposta.numero ? ', ' + resposta.numero : ''));
+  dados.append('codigo_cartografico', resposta.codCart || 'nao localizado');
+  dados.append('bairro', resposta.bairro);
+  dados.append('zona', resposta.zona);
+  dados.append('tipo', resposta.tipo);
+  dados.append('situacao', resposta.situacao);
+  dados.append('area', resposta.area);
+  dados.append('planta', resposta.planta);
+  dados.append('documentos', resposta.documentos.join(', '));
+  dados.append('tentou_antes', resposta.tentouAntes);
+  dados.append('protocolo', resposta.protocolo);
+  dados.append('relato', resposta.relato);
+  dados.append('consentimento', resposta.consentimento ? 'sim' : 'nao');
+  resposta.anexos.forEach(a => dados.append('anexos', a, a.name));
+
+  const aviso = document.getElementById('avisoEnvio');
+  try {
+    const r = await fetch('/', { method: 'POST', body: dados });
+    if (!r.ok) throw new Error('resposta ' + r.status);
+    if (aviso) aviso.innerHTML = '<div class="ok"><strong>Recebido.</strong> Seus dados' +
+      (resposta.anexos.length ? ' e ' + resposta.anexos.length + ' documento(s)' : '') +
+      ' chegaram at\u00e9 n\u00f3s. Voc\u00ea pode enviar tamb\u00e9m pelo WhatsApp, se preferir falar agora.</div>';
+  } catch (e) {
+    // silencioso de proposito: quem preencheu nao tem culpa de rede, e o WhatsApp resolve
+    if (aviso) aviso.innerHTML = '';
+  }
 }
 
 function desenhar() {
@@ -418,6 +508,7 @@ function desenhar() {
     `<div class="bolinha ${i < etapa ? 'feita' : ''} ${i === etapa ? 'atual' : ''}"></div>`).join('');
 
   const corpo = e.final ? telaFinal() : e.render();
+  if (e.final) setTimeout(enviarParaNetlify, 60);
   const nav = e.final ? '' : `
     <div class="navegacao">
       <button class="voltar" id="btVoltar" ${etapa === 0 ? 'style="visibility:hidden"' : ''}>← Voltar</button>
@@ -428,6 +519,7 @@ function desenhar() {
     `<h2>${esc(e.titulo)}</h2><p class="ajuda">${esc(e.ajuda)}</p>${corpo}${nav}`;
 
   ligarOpcoes();
+  ligarConsentimento();
   if (e.aoEntrar) e.aoEntrar();
 
   const bt = document.getElementById('btProximo');
