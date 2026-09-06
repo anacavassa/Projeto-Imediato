@@ -482,7 +482,7 @@ function buscarImovel() {
     resposta.coords = r ? r.c : null;
     pontoReferencia = r ? r.c : null;
     alvo.innerHTML = `
-      <div class="aviso"><strong>Localizamos a rua, mas não o código deste número.</strong><br>
+      <div class="aviso" id="avisoSemCodigo"><strong>Localizamos a rua, mas não o código deste número.</strong><br>
       Isso acontece e não impede nada — nem todo imóvel de Campinas tem o código na consulta
       pública. Levantamos ele no seu processo. Pode seguir.</div>
       ${r ? '<div id="mapa"></div><div class="nota-mapa"><span>O desenho do lote vem do levantamento da Prefeitura. Imagens de sat&eacute;lite globais t&ecirc;m deslocamento pr&oacute;prio de alguns metros &mdash; sobre a foto oficial os dois coincidem.</span><button type="button" id="alinhar-base" onclick="alternarBase()">Alinhar com a base oficial</button></div><div class="dica-mapa"><strong>Clique no seu imóvel na foto.</strong> Os números em azul são imóveis vizinhos já cadastrados — use-os para se orientar. O código cartográfico sai na hora, direto da base da Prefeitura.</div><div id="fichaPonto"></div>' : ''}`;
@@ -942,6 +942,10 @@ async function consultarPonto(lon, lat, interno) {
     if (!c || !c.cod_cartografico) { if (alvo) alvo.innerHTML = ''; return; }
 
     resposta.codCart = c.cod_cartografico;
+    // o aviso de "nao achamos o codigo" nao pode continuar na tela depois de
+    // achar o codigo - contradiz o resultado logo abaixo dele
+    const semCodigo = document.getElementById('avisoSemCodigo');
+    if (semCodigo) semCodigo.remove();
     resposta.zona = z.zoneamento || resposta.zona;
     resposta.macrozona = z.macrozona || '';
     resposta.quarteirao = z.quarteirao_num || '';
