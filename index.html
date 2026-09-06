@@ -14,14 +14,24 @@
     --texto:#404040; --texto2:#6B6B6B; --borda:#e6e0d8; --verde:#25D366;
   }
   *{box-sizing:border-box}
-  body{margin:0;font-family:"Noto Sans",system-ui,sans-serif;color:var(--texto);background:var(--creme)}
+  body{margin:0;font-family:"Noto Sans",system-ui,sans-serif;color:var(--texto);
+    background:var(--creme);
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(255,105,0,.06), transparent 42%),
+      radial-gradient(circle at 88% 92%, rgba(46,68,83,.07), transparent 46%),
+      linear-gradient(180deg, #fbf8f4 0%, #f4efe7 100%);
+    background-attachment:fixed;min-height:100vh}
 
-  .topo{background:var(--petroleo);color:#fff;padding:16px 22px;text-align:center}
+  .topo{background:linear-gradient(135deg,#2E4453 0%,#263a47 100%);color:#fff;
+    padding:20px 22px;text-align:center;
+    box-shadow:inset 0 -3px 0 rgba(255,105,0,.85)}
   .topo .marca{font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
-  .topo h1{margin:6px 0 0;font-size:21px;font-weight:600}
+  .topo h1{margin:7px 0 0;font-size:22px;font-weight:700;letter-spacing:-.2px}
 
   .palco{max-width:660px;margin:26px auto 60px;padding:0 18px}
-  .cartao{background:#fff;border-radius:14px;padding:30px 28px 26px;box-shadow:0 4px 22px rgba(0,0,0,.07)}
+  .cartao{background:#fff;border-radius:16px;padding:32px 30px 28px;
+    box-shadow:0 1px 2px rgba(46,68,83,.06), 0 12px 34px rgba(46,68,83,.10);
+    border:1px solid rgba(46,68,83,.06)}
 
   .bolinhas{display:flex;gap:9px;justify-content:center;margin-bottom:26px}
   .bolinha{width:11px;height:11px;border-radius:50%;background:#ddd6cb;transition:background .25s}
@@ -74,7 +84,8 @@
   .resumo dt{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:#9a9a9a;margin-top:12px}
   .resumo dd{margin:1px 0 0;font-weight:600}
 
-  .rodape{text-align:center;font-size:12.5px;color:var(--texto2);margin-top:22px;line-height:1.7}
+  .rodape{text-align:center;font-size:12.5px;color:var(--texto2);margin-top:26px;
+    line-height:1.7;padding-top:18px;border-top:1px solid rgba(46,68,83,.09)}
   .rodape a{color:var(--laranja)}
   .carregando{text-align:center;color:var(--texto2);padding:40px 0;font-size:14.5px}
 
@@ -98,6 +109,40 @@
   .cnm-caixa .titulo{font-size:13px;font-weight:600;margin-bottom:4px}
   .cnm-caixa .onde{font-size:12.5px;color:var(--texto2);margin-bottom:9px;line-height:1.5}
 
+
+
+
+  .laudo{border:1px solid var(--borda);border-radius:12px;overflow:hidden;margin-bottom:22px}
+  .laudo .cabeca{background:var(--petroleo);color:#fff;padding:13px 18px}
+  .laudo .cabeca .t{font-size:15px;font-weight:700}
+  .laudo .cabeca .s{font-size:11.5px;opacity:.8;margin-top:2px}
+  .laudo .corpo{background:#fff;padding:6px 18px 14px}
+  .laudo .linha{display:flex;justify-content:space-between;gap:14px;padding:10px 0;
+    border-bottom:1px solid #f1ece4;font-size:14.5px}
+  .laudo .linha:last-child{border-bottom:none}
+  .laudo .rot{color:var(--texto2);flex:0 0 auto}
+  .laudo .val{font-weight:700;color:var(--petroleo);text-align:right;
+    font-variant-numeric:tabular-nums}
+  .laudo .val.destaque{color:var(--laranja);font-size:16px}
+  .laudo .nota{background:var(--creme);padding:11px 18px;font-size:12px;
+    color:var(--texto2);line-height:1.5;border-top:1px solid var(--borda)}
+  .nota-mapa{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--texto2);
+    line-height:1.5;margin-top:9px}
+  .nota-mapa button{background:#fff;border:1.5px solid var(--borda);border-radius:20px;
+    padding:5px 13px;font-size:12px;font-weight:600;color:var(--petroleo);cursor:pointer;
+    white-space:nowrap;flex:0 0 auto}
+  .nota-mapa button:hover{border-color:var(--laranja);color:var(--laranja)}
+  /* consentimento em destaque quando falta marcar */
+  @keyframes chama {
+    0%,100% { box-shadow: 0 0 0 0 rgba(255,105,0,.55); border-color: var(--laranja) }
+    50%     { box-shadow: 0 0 0 7px rgba(255,105,0,0); border-color: #ffab6b }
+  }
+  .consent.faltando{ animation: chama 1.15s ease-out 3; border-color:var(--laranja);
+    background:#fff4ea }
+  .consent.faltando span{ font-weight:600 }
+  @media (prefers-reduced-motion: reduce){ .consent.faltando{ animation:none } }
+  .aviso-limite{background:#fdf6e8;border:1px solid #ecdcb8;border-radius:9px;
+    padding:13px 15px;font-size:13.5px;line-height:1.6;color:#6b5a2f;margin-top:12px}
   /* etiqueta de numero predial dos vizinhos */
   .numero-vizinho{background:rgba(46,68,83,.62);color:#fff;border-radius:9px;
     padding:0 5px;font-size:9.5px;font-weight:600;white-space:nowrap;
@@ -220,9 +265,10 @@ const etapas = [
       const n = document.getElementById('numero').value.trim();
       if (!r) return 'Informe a rua do imóvel.';
       resposta.rua = r; resposta.numero = n;
-      // busca aqui também: se a pessoa digitar e clicar direto em "Próximo",
-      // o evento de saída do campo pode não disparar e o código se perderia
-      buscarImovel();
+      // busca aqui tambem: se a pessoa digitar e clicar direto em "Proximo",
+      // o evento de saida do campo pode nao disparar. Mas nunca refazer quando ja
+      // ha codigo: o ramo de "nao encontrado" zeraria o que veio do clique no mapa.
+      if (!resposta.codCart) buscarImovel();
       return null;
     }
   },
@@ -299,7 +345,11 @@ const etapas = [
       resposta.consentimento = document.getElementById('consentimento').checked;
       if (!resposta.nome) return 'Informe seu nome.';
       if (resposta.whatsapp.replace(/\D/g, '').length < 10) return 'Informe um WhatsApp válido, com DDD.';
-      if (!resposta.consentimento) return 'Marque a autorização de contato para continuar.';
+      if (!resposta.consentimento) {
+        const cx = document.getElementById('rotuloConsent');
+        if (cx) { cx.classList.remove('faltando'); void cx.offsetWidth; cx.classList.add('faltando'); }
+        return 'Marque a autorização de contato para continuar.';
+      }
       return null;
     }
   },
@@ -330,8 +380,11 @@ function multiEscolha(campo, itens) {
 function ligarConsentimento() {
   const c = document.getElementById('consentimento');
   if (!c) return;
-  c.addEventListener('change', () =>
-    document.getElementById('rotuloConsent').classList.toggle('marcada', c.checked));
+  c.addEventListener('change', () => {
+    const cx = document.getElementById('rotuloConsent');
+    cx.classList.toggle('marcada', c.checked);
+    if (c.checked) cx.classList.remove('faltando');
+  });
   if (c.checked) document.getElementById('rotuloConsent').classList.add('marcada');
 }
 
@@ -382,7 +435,7 @@ function montarBuscaEndereco() {
   if (resposta.rua && resposta.numero) {
     buscarImovel();
     // se ela tinha confirmado clicando no mapa, refaz aquela consulta
-    if (resposta.coords) setTimeout(() => consultarPonto(resposta.coords[0], resposta.coords[1]), 1200);
+    if (resposta.coords) setTimeout(() => consultarPonto(resposta.coords[0], resposta.coords[1], true), 1200);
   }
 }
 
@@ -400,6 +453,7 @@ function buscarImovel() {
     resposta.bairro = achado.BAIRRO || '';
     resposta.zona = achado.ZONE_NEW || '';
     resposta.coords = achado.c;
+    pontoReferencia = achado.c;
     alvo.innerHTML = `
       <div class="achado">
         <div style="font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:#9a9a9a">Código cartográfico</div>
@@ -408,6 +462,7 @@ function buscarImovel() {
         ${resposta.zona ? `<div><strong>Zona:</strong> ${esc(resposta.zona)}</div>` : ''}
       </div>
       <div id="mapa"></div>
+      <div class="nota-mapa"><span>O desenho do lote vem do levantamento da Prefeitura. Imagens de sat&eacute;lite globais t&ecirc;m deslocamento pr&oacute;prio de alguns metros &mdash; sobre a foto oficial os dois coincidem.</span><button type="button" id="alinhar-base" onclick="alternarBase()">Alinhar com a base oficial</button></div>
       <div class="dica-mapa"><strong>Confirme clicando no seu imóvel</strong> na foto de satélite.
         Assim buscamos o código e o desenho do lote no ponto exato.</div>
       <div id="fichaPonto">${blocoCartorio(resposta.codCart, resposta.bairro)}${blocoMatricula(resposta.codCart)}</div>
@@ -424,11 +479,12 @@ function buscarImovel() {
     const r = ruas.find(x => chaveRua(x.n) === chave) || ruas.find(x => x.b.includes(semAcento(rua)));
     resposta.codCart = ''; resposta.zona = ''; resposta.bairro = '';
     resposta.coords = r ? r.c : null;
+    pontoReferencia = r ? r.c : null;
     alvo.innerHTML = `
       <div class="aviso"><strong>Localizamos a rua, mas não o código deste número.</strong><br>
       Isso acontece e não impede nada — nem todo imóvel de Campinas tem o código na consulta
       pública. Levantamos ele no seu processo. Pode seguir.</div>
-      ${r ? '<div id="mapa"></div><div class="dica-mapa"><strong>Clique no seu imóvel na foto.</strong> Os números em azul são imóveis vizinhos já cadastrados — use-os para se orientar. O código cartográfico sai na hora, direto da base da Prefeitura.</div><div id="fichaPonto"></div>' : ''}`;
+      ${r ? '<div id="mapa"></div><div class="nota-mapa"><span>O desenho do lote vem do levantamento da Prefeitura. Imagens de sat&eacute;lite globais t&ecirc;m deslocamento pr&oacute;prio de alguns metros &mdash; sobre a foto oficial os dois coincidem.</span><button type="button" id="alinhar-base" onclick="alternarBase()">Alinhar com a base oficial</button></div><div class="dica-mapa"><strong>Clique no seu imóvel na foto.</strong> Os números em azul são imóveis vizinhos já cadastrados — use-os para se orientar. O código cartográfico sai na hora, direto da base da Prefeitura.</div><div id="fichaPonto"></div>' : ''}`;
     if (r) desenharMapa(r.c, false, rua);
   }
 }
@@ -466,16 +522,17 @@ function desenharMapa(coord, precisa, rua) {
 
   // Esri World Imagery: recente e sem chave. A ortofoto da Prefeitura e de 2014 -
   // util para comparar, mas mostra terreno vazio onde hoje ha construcao.
-  const satelite = L.tileLayer(
+  camadaSatelite = L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     { maxZoom: 20, maxNativeZoom: 19, attribution: 'Imagem: Esri, Maxar, Earthstar Geographics' });
-  const orto = new CamadaPMC('2014_Ortofoto', { formato: 'image/jpeg', transparente: 'false', maxZoom: 20 });
+  camadaOrto = new CamadaPMC('2014_Ortofoto', { formato: 'image/jpeg', transparente: 'false', maxZoom: 20 });
   const ruasBase = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20, attribution: '© OpenStreetMap' });
-  const lotes = new CamadaPMC('propriedades', { formato: 'image/png', transparente: 'true', maxZoom: 20 });
+  camadaLotes = new CamadaPMC('propriedades', { formato: 'image/png', transparente: 'true', maxZoom: 20 });
 
-  satelite.addTo(mapa); lotes.addTo(mapa);
-  L.control.layers({ 'Satélite (atual)': satelite, 'Foto aérea 2014 (Prefeitura)': orto, 'Mapa de ruas': ruasBase },
-                   { 'Limites de lote': lotes }).addTo(mapa);
+  camadaSatelite.addTo(mapa); camadaLotes.addTo(mapa);
+  baseAtual = 'satelite';
+  L.control.layers({ 'Satélite (atual)': camadaSatelite, 'Foto aérea 2014 (Prefeitura)': camadaOrto, 'Mapa de ruas': ruasBase },
+                   { 'Limites de lote': camadaLotes }).addTo(mapa);
   mapa.on('click', e => consultarPonto(e.latlng.lng, e.latlng.lat));
 
   // anel fino em vez de ponto cheio: o marcador nao pode cobrir o terreno
@@ -537,6 +594,34 @@ function montarMensagem() {
   return L.join('\n');
 }
 
+
+function blocoLaudo() {
+  const linha = (rot, val, destaque) => val
+    ? `<div class="linha"><span class="rot">${rot}</span><span class="val${destaque ? ' destaque' : ''}">${val}</span></div>` : '';
+  const corpo = [
+    linha('Endereço', esc(resposta.rua) + (resposta.numero ? ', ' + esc(resposta.numero) : '')),
+    linha('Bairro', tituloTexto(resposta.bairro)),
+    linha('Código cartográfico', resposta.codCart, true),
+    linha('Área do lote', resposta.areaLote ? Number(resposta.areaLote).toLocaleString('pt-BR') + ' m²' : ''),
+    linha('Quarteirão', resposta.quarteirao),
+    linha('Zoneamento', resposta.zona),
+    linha('Macrozona', resposta.macrozona),
+    linha('Cartório de registro', resposta.cartorio),
+    linha('Matrícula', resposta.matricula ? Number(resposta.matricula).toLocaleString('pt-BR') + ' (a confirmar)' : '')
+  ].join('');
+  if (!corpo) return '';
+  return `<div class="laudo">
+    <div class="cabeca">
+      <div class="t">Levantamento preliminar do imóvel</div>
+      <div class="s">Dados públicos da Prefeitura de Campinas · consulta de ${new Date().toLocaleDateString('pt-BR')}</div>
+    </div>
+    <div class="corpo">${corpo}</div>
+    <div class="nota">Consulta informativa, sobre bases públicas. Não substitui certidão,
+      ficha informativa oficial nem levantamento em campo — que é o que define a área
+      construída e as condições de regularização.</div>
+  </div>`;
+}
+
 function telaFinal() {
   const d = [];
   const add = (r, v) => { if (v) d.push(`<dt>${r}</dt><dd>${esc(v)}</dd>`); };
@@ -558,6 +643,8 @@ function telaFinal() {
 
   const url = 'https://api.whatsapp.com/send?phone=' + ZAP + '&text=' + encodeURIComponent(montarMensagem());
   return `
+    ${blocoLaudo()}
+    <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#9a9a9a;font-weight:700;margin-bottom:6px">O que você informou</div>
     <dl class="resumo">${d.join('')}</dl>
     <div style="margin-top:24px"></div>
     <a href="${url}" target="_blank" rel="noopener" style="text-decoration:none">
@@ -684,6 +771,8 @@ function blocoCartorio(cod, bairro) {
       <span class="ressalva">Confirme antes de pedir certid&atilde;o. Se voc&ecirc; tem a matr&iacute;cula em m&atilde;os,
       o campo abaixo d&aacute; a resposta exata.</span></div>`;
   }
+  // guarda para o laudo final: sem isso o cartorio aparecia so na tela do mapa
+  if (r.ri && info && r.confianca !== 'baixa') resposta.cartorio = info.nome;
   const forca = r.confianca === 'confirmada' ? ('confirmado em matr&iacute;cula emitida' + (r.onde ? ' (' + r.onde + ')' : ''))
                                              : `${r.registros} im&oacute;veis deste setor na mesma serventia`;
   return `<div class="cartorio">
@@ -721,6 +810,49 @@ function montarCNM() {
 }
 
 
+
+// ---------------------------------------------------------------------------
+// Limites de consulta.
+// O simulador existe para quem quer saber do proprio imovel. Sem limite, ele
+// vira base de consulta aberta da cidade inteira - e nao e para isso que a
+// Ana pagou o levantamento.
+// ---------------------------------------------------------------------------
+const LIMITE_RAIO = 250;        // metros do endereco informado
+const LIMITE_CONSULTAS = 12;    // por janela
+const JANELA_MIN = 10;          // minutos
+let pontoReferencia = null;     // definido quando o endereco e localizado
+
+function distancia(a, b) {
+  const kx = 111320 * Math.cos(a[1] * Math.PI / 180), ky = 110540;
+  return Math.hypot((a[0] - b[0]) * kx, (a[1] - b[1]) * ky);
+}
+
+function historico() {
+  try { return JSON.parse(localStorage.getItem('consultas') || '[]'); }
+  catch (e) { return []; }   // navegador que bloqueia armazenamento: segue sem limite
+}
+
+function registraConsulta() {
+  try {
+    const agora = Date.now();
+    const lista = historico().filter(t => agora - t < JANELA_MIN * 60000);
+    lista.push(agora);
+    localStorage.setItem('consultas', JSON.stringify(lista));
+  } catch (e) { /* sem armazenamento, sem contagem */ }
+}
+
+function minutosDeEspera() {
+  const agora = Date.now();
+  const lista = historico().filter(t => agora - t < JANELA_MIN * 60000);
+  if (lista.length < LIMITE_CONSULTAS) return 0;
+  return Math.max(1, Math.ceil((JANELA_MIN * 60000 - (agora - lista[0])) / 60000));
+}
+
+function avisaLimite(texto) {
+  const alvo = document.getElementById('fichaPonto');
+  if (alvo) alvo.innerHTML = '<div class="aviso-limite">' + texto + '</div>';
+}
+
 // ---------------------------------------------------------------------------
 // Consulta pelo ponto clicado, nos servicos abertos da Prefeitura de Campinas.
 // Cobrem a cidade toda - a base de alvaras cobre so os 13.740 processos.
@@ -729,6 +861,7 @@ const PMC = 'https://zoneamento.campinas.sp.gov.br/novo_zoneamento/';
 let contornoLote = null;
 let anelAlvo = null;
 let jaVoou = false;
+let camadaSatelite = null, camadaOrto = null, camadaLotes = null;
 
 function areaPoligono(anel) {
   const lat0 = anel.reduce((s, p) => s + p[1], 0) / anel.length;
@@ -739,7 +872,25 @@ function areaPoligono(anel) {
   return Math.abs(s) / 2;
 }
 
-async function consultarPonto(lon, lat) {
+async function consultarPonto(lon, lat, interno) {
+  if (!interno) {
+    // fora do raio do endereco informado: o simulador nao e para varrer a cidade
+    if (pontoReferencia && distancia([lon, lat], pontoReferencia) > LIMITE_RAIO) {
+      avisaLimite('<strong>Clique no im&oacute;vel do endere&ccedil;o que voc&ecirc; informou.</strong><br>' +
+        'A consulta vale para o endere&ccedil;o pesquisado e a vizinhan&ccedil;a imediata. ' +
+        'Para outro im&oacute;vel, volte e digite o endere&ccedil;o dele.');
+      return;
+    }
+    const espera = minutosDeEspera();
+    if (espera) {
+      avisaLimite('<strong>Muitas consultas seguidas.</strong><br>' +
+        'Voc&ecirc; pode consultar de novo em cerca de ' + espera + ' minuto' + (espera > 1 ? 's' : '') +
+        '. Se precisa de v&aacute;rios im&oacute;veis, fale com a engenheira pelo WhatsApp &mdash; ' +
+        '&eacute; mais r&aacute;pido do que um a um por aqui.');
+      return;
+    }
+    registraConsulta();
+  }
   const alvo = document.getElementById('fichaPonto');
   if (alvo) alvo.innerHTML = '<div class="enviando">Consultando a base da Prefeitura&hellip;</div>';
   try {
@@ -802,6 +953,27 @@ function fichaDoPonto(areaLote) {
     </div>
     ${blocoCartorio(resposta.codCart, resposta.bairro)}
     ${blocoMatricula(resposta.codCart)}`;
+}
+
+
+// ---------------------------------------------------------------------------
+// Alinhamento entre cadastro e imagem.
+// O desenho do lote vem do levantamento topografico da Prefeitura; a imagem de
+// satelite global tem erro de posicionamento proprio, de alguns metros. Onde os
+// dois coincidem exatamente e sobre a ortofoto da propria Prefeitura.
+// ---------------------------------------------------------------------------
+let baseAtual = 'satelite';
+function alternarBase() {
+  if (!mapa || !camadaSatelite || !camadaOrto) return;
+  const bt = document.getElementById('alinhar-base');
+  if (baseAtual === 'satelite') {
+    mapa.removeLayer(camadaSatelite); camadaOrto.addTo(mapa); baseAtual = 'orto';
+    if (bt) bt.textContent = 'Voltar ao satélite atual';
+  } else {
+    mapa.removeLayer(camadaOrto); camadaSatelite.addTo(mapa); baseAtual = 'satelite';
+    if (bt) bt.textContent = 'Alinhar com a base oficial';
+  }
+  if (camadaLotes) camadaLotes.bringToFront();
 }
 
 function desenhar() {
